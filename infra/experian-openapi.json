@@ -1,0 +1,64 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Experian Credit Bureau (workshop mock)",
+    "version": "1.0.0",
+    "description": "Mock credit bureau API. Returns a canned credit report for a subject."
+  },
+  "servers": [
+    { "url": "EXPERIAN_API_BASE" }
+  ],
+  "security": [ { "apiKey": [] } ],
+  "paths": {
+    "/credit-report": {
+      "post": {
+        "operationId": "get_credit_report",
+        "summary": "Pull a credit report for a subject",
+        "description": "Returns the subject's credit report: score, open accounts, delinquencies in the last 24 months, revolving utilization percent, and total monthly debt obligations. Use the applicant's VERIFIED full legal name from their identity documents.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["full_name"],
+                "properties": {
+                  "full_name": {
+                    "type": "string",
+                    "description": "Subject's verified full legal name"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credit report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "score": { "type": "integer" },
+                    "open_accounts": { "type": "integer" },
+                    "delinquencies_24mo": { "type": "integer" },
+                    "utilization_pct": { "type": "integer" },
+                    "monthly_obligations": { "type": "number" },
+                    "bureau": { "type": "string" },
+                    "subject": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": { "type": "apiKey", "in": "header", "name": "x-api-key" }
+    }
+  }
+}

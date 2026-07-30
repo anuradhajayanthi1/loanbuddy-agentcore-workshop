@@ -1,0 +1,617 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  LoanBuddy AgentCore Workshop - base infrastructure.
+  Everything that is NOT an AgentCore primitive lives here: Cognito, DynamoDB,
+  S3, CloudFront, the mock Experian API, and pre-scoped IAM execution roles.
+  AgentCore resources (runtimes, memory, gateway, credential providers) are
+  created by attendees in the labs, or by scripts/bootstrap.sh.
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Default: loanbuddy
+    Description: Prefix for named resources.
+
+Resources:
+
+  # ---------------------------------------------------------------------------
+  # Cognito: who is the human?
+  # ---------------------------------------------------------------------------
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${ResourcePrefix}-users'
+      AutoVerifiedAttributes: []
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true   # workshop: only seeded users
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub '${ResourcePrefix}-${AWS::AccountId}'
+      UserPoolId: !Ref UserPool
+
+  # OAuth resource server + scope for machine-to-machine Gateway access
+  GatewayResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref UserPool
+      Identifier: !Sub '${ResourcePrefix}-gateway'
+      Name: LoanBuddy Gateway
+      Scopes:
+        - ScopeName: invoke
+          ScopeDescription: Invoke tools on the LoanBuddy gateway
+
+  # SPA client: humans logging in through the UI
+  SpaClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${ResourcePrefix}-spa'
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      SupportedIdentityProviders: [COGNITO]
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      CallbackURLs:
+        - !Sub 'https://${Distribution.DomainName}/'
+        - http://localhost:3000/
+      LogoutURLs:
+        - !Sub 'https://${Distribution.DomainName}/'
+        - http://localhost:3000/
+
+  # M2M client: agents obtaining tokens to call the Gateway (client credentials)
+  M2MClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: GatewayResourceServer
+    Properties:
+      ClientName: !Sub '${ResourcePrefix}-m2m'
+      UserPoolId: !Ref UserPool
+      GenerateSecret: true
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [client_credentials]
+      AllowedOAuthScopes:
+        - !Sub '${ResourcePrefix}-gateway/invoke'
+      SupportedIdentityProviders: [COGNITO]
+
+  # ---------------------------------------------------------------------------
+  # Data stores
+  # ---------------------------------------------------------------------------
+
+  LoanApplicationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ResourcePrefix}-applications'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: applicant_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: applicant_id
+          KeyType: HASH
+
+  DocsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ResourcePrefix}-docs-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          # Workshop-grade: '*' avoids a circular dependency with CloudFront.
+          # In production, restrict to the exact UI origin.
+          - AllowedOrigins: ['*']
+            AllowedMethods: [PUT]
+            AllowedHeaders: ['*']
+            MaxAge: 3600
+
+  UiBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ResourcePrefix}-ui-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  UiBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UiBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${UiBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
+
+  # ---------------------------------------------------------------------------
+  # CloudFront: hosts the UI at / and the mock company registry at /registry/
+  # ---------------------------------------------------------------------------
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${ResourcePrefix}-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: LoanBuddy workshop UI + mock registry
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: ui-s3
+            DomainName: !GetAtt UiBucket.RegionalDomainName
+            OriginAccessControlId: !Ref OriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+          # NOTE: an earlier revision proxied /runtimes/* to the AgentCore
+          # data plane from here "to avoid CORS". The data plane supports
+          # CORS natively, and CloudFront's ~30s origin timeout kills long
+          # agent turns (document vision, underwriting) - so the SPA now
+          # calls the Runtime directly and no proxy origin exists.
+        DefaultCacheBehavior:
+          TargetOriginId: ui-s3
+          ViewerProtocolPolicy: redirect-to-https
+          # CachingDisabled managed policy: workshop iterates on the UI config
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          AllowedMethods: [GET, HEAD, OPTIONS]
+
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  # ---------------------------------------------------------------------------
+  # Mock Experian: Lambda + Function URL, wrapped later as an OpenAPI gateway
+  # target with an API-key credential. The Lambda enforces the API key itself
+  # so the credential attachment is honest, not decorative.
+  # ---------------------------------------------------------------------------
+
+  ExperianFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-experian-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ExperianFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ResourcePrefix}-experian-mock'
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt ExperianFunctionRole.Arn
+      Environment:
+        Variables:
+          API_KEY: workshop-experian-key-2026
+      Code:
+        ZipFile: |
+          import hashlib
+          import json
+          import os
+
+          # Deterministic canned credit profiles. Seeded personas get fixed
+          # reports; anyone else gets a stable hash-derived profile.
+          PROFILES = {
+              "prime": {
+                  "score": 780, "open_accounts": 4, "delinquencies_24mo": 0,
+                  "utilization_pct": 12, "monthly_obligations": 850,
+              },
+              "subprime": {
+                  "score": 585, "open_accounts": 9, "delinquencies_24mo": 3,
+                  "utilization_pct": 74, "monthly_obligations": 2100,
+              },
+              "near_prime": {
+                  "score": 668, "open_accounts": 6, "delinquencies_24mo": 1,
+                  "utilization_pct": 41, "monthly_obligations": 1300,
+              },
+          }
+
+          def pick_profile(full_name: str) -> dict:
+              n = (full_name or "").lower()
+              if "alice" in n:
+                  return PROFILES["prime"]
+              if "bob" in n:
+                  return PROFILES["subprime"]
+              h = int(hashlib.sha256(n.encode()).hexdigest(), 16) % 3
+              return list(PROFILES.values())[h]
+
+          def handler(event, context):
+              # Function URL invocation (API key enforced)
+              headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
+              if headers.get("x-api-key") != os.environ["API_KEY"]:
+                  return {"statusCode": 403,
+                          "body": json.dumps({"error": "invalid or missing API key"})}
+              try:
+                  body = json.loads(event.get("body") or "{}")
+              except json.JSONDecodeError:
+                  return {"statusCode": 400,
+                          "body": json.dumps({"error": "invalid JSON body"})}
+              full_name = body.get("full_name", "")
+              if not full_name:
+                  return {"statusCode": 400,
+                          "body": json.dumps({"error": "full_name is required"})}
+              report = dict(pick_profile(full_name))
+              report["bureau"] = "Experian (workshop mock)"
+              report["subject"] = full_name
+              return {"statusCode": 200,
+                      "headers": {"Content-Type": "application/json"},
+                      "body": json.dumps(report)}
+
+  # HTTP API in front of the mock (not a bare Function URL: some accounts
+  # block anonymous function-URL invocations via org policy, and an API
+  # endpoint is the honest shape of a third-party bureau API anyway).
+  # Auth model is the bureau's own: x-api-key enforced inside the handler.
+  ExperianApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub '${ResourcePrefix}-experian'
+      ProtocolType: HTTP
+
+  ExperianIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ExperianApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ExperianFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  ExperianRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExperianApi
+      RouteKey: 'POST /credit-report'
+      Target: !Sub 'integrations/${ExperianIntegration}'
+
+  ExperianStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ExperianApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  ExperianApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ExperianFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ExperianApi}/*'
+
+  # ---------------------------------------------------------------------------
+  # Pre-scoped AgentCore execution roles - the least-privilege matrix.
+  # Precise where it teaches (S3 prefixes, DDB, credential access);
+  # standard AgentCore runtime plumbing otherwise.
+  # ---------------------------------------------------------------------------
+
+  # CFN YAML does not support anchors, so the assume-role and plumbing policy
+  # blocks are intentionally repeated verbatim in all three roles.
+  SupervisorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-supervisor-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: bedrock-agentcore.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: runtime-plumbing
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: BedrockModels
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: '*'
+              - Sid: EcrPull
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: '*'
+              - Sid: Telemetry
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+              - Sid: WorkloadIdentity
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:GetWorkloadAccessToken
+                  - bedrock-agentcore:GetWorkloadAccessTokenForJWT
+                  - bedrock-agentcore:GetWorkloadAccessTokenForUserId
+                Resource: '*'
+        - PolicyName: supervisor-boundaries
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: LedgerFullAccess
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt LoanApplicationsTable.Arn
+              - Sid: PresignUploadsOnly   # can sign PUTs, cannot read docs
+                Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub '${DocsBucket.Arn}/docs/*'
+              - Sid: Memory
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:CreateEvent
+                  - bedrock-agentcore:ListEvents
+                  - bedrock-agentcore:GetEvent
+                  - bedrock-agentcore:RetrieveMemoryRecords
+                  - bedrock-agentcore:ListMemoryRecords
+                  - bedrock-agentcore:GetMemoryRecord
+                  - bedrock-agentcore:GetMemory
+                Resource: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:memory/*'
+              - Sid: OutboundOAuthForGateway
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:GetResourceOauth2Token
+                Resource: '*'
+              - Sid: IdentityTokenVault
+                # The Identity token vault keeps provider client secrets in
+                # Secrets Manager under this reserved prefix; the data-plane
+                # token fetch resolves them with the CALLER's role.
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
+
+  DocCoordinatorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-doc-coordinator-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: bedrock-agentcore.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: runtime-plumbing
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: BedrockModels
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: '*'
+              - Sid: EcrPull
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: '*'
+              - Sid: Telemetry
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+              - Sid: WorkloadIdentity
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:GetWorkloadAccessToken
+                  - bedrock-agentcore:GetWorkloadAccessTokenForJWT
+                  - bedrock-agentcore:GetWorkloadAccessTokenForUserId
+                Resource: '*'
+        - PolicyName: doc-coordinator-boundaries
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ReadDocsOnly          # read documents; never write, never elsewhere
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub '${DocsBucket.Arn}/docs/*'
+              - Sid: LedgerDocSection
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt LoanApplicationsTable.Arn
+              - Sid: BrowserTool
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:StartBrowserSession
+                  - bedrock-agentcore:StopBrowserSession
+                  - bedrock-agentcore:GetBrowserSession
+                  - bedrock-agentcore:ListBrowserSessions
+                  - bedrock-agentcore:ConnectBrowserAutomationStream
+                  - bedrock-agentcore:ConnectBrowserLiveViewStream
+                  - bedrock-agentcore:GetBrowser
+                Resource: '*'
+              # NOTE: no Experian access, no Memory, no OAuth providers.
+
+  CreditAnalystRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-credit-analyst-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: bedrock-agentcore.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: runtime-plumbing
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: BedrockModels
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: '*'
+              - Sid: EcrPull
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: '*'
+              - Sid: Telemetry
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+              - Sid: WorkloadIdentity
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:GetWorkloadAccessToken
+                  - bedrock-agentcore:GetWorkloadAccessTokenForJWT
+                  - bedrock-agentcore:GetWorkloadAccessTokenForUserId
+                Resource: '*'
+        - PolicyName: credit-analyst-boundaries
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: LedgerCreditSection
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt LoanApplicationsTable.Arn
+              - Sid: CodeInterpreterTool
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:StartCodeInterpreterSession
+                  - bedrock-agentcore:StopCodeInterpreterSession
+                  - bedrock-agentcore:InvokeCodeInterpreter
+                  - bedrock-agentcore:GetCodeInterpreterSession
+                  - bedrock-agentcore:ListCodeInterpreterSessions
+                  - bedrock-agentcore:GetCodeInterpreter
+                Resource: '*'
+              - Sid: OutboundOAuthForGateway
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:GetResourceOauth2Token
+                Resource: '*'
+              - Sid: IdentityTokenVault
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
+              # NOTE: no S3 access at all - this agent never sees documents.
+
+Outputs:
+  Region:
+    Value: !Ref AWS::Region
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolDomain:
+    Value: !Sub '${ResourcePrefix}-${AWS::AccountId}'
+  CognitoDiscoveryUrl:
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}/.well-known/openid-configuration'
+  CognitoTokenEndpoint:
+    Value: !Sub 'https://${ResourcePrefix}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+  SpaClientId:
+    Value: !Ref SpaClient
+  M2MClientId:
+    Value: !Ref M2MClient
+  GatewayScope:
+    Value: !Sub '${ResourcePrefix}-gateway/invoke'
+  LoanApplicationsTable:
+    Value: !Ref LoanApplicationsTable
+  DocsBucket:
+    Value: !Ref DocsBucket
+  UiBucket:
+    Value: !Ref UiBucket
+  UiUrl:
+    Value: !Sub 'https://${Distribution.DomainName}/'
+  RegistryUrl:
+    Value: !Sub 'https://${Distribution.DomainName}/registry/index.html'
+  DistributionId:
+    Value: !Ref Distribution
+  ExperianApiUrl:
+    Value: !Sub 'https://${ExperianApi}.execute-api.${AWS::Region}.amazonaws.com/credit-report'
+  ExperianApiKey:
+    Value: workshop-experian-key-2026
+    Description: Workshop mock key (not a real secret)
+  SupervisorRoleArn:
+    Value: !GetAtt SupervisorRole.Arn
+  DocCoordinatorRoleArn:
+    Value: !GetAtt DocCoordinatorRole.Arn
+  CreditAnalystRoleArn:
+    Value: !GetAtt CreditAnalystRole.Arn

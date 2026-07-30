@@ -1,0 +1,94 @@
+:root {
+  --navy: #1d3557; --navy-dark: #14263e; --bg: #f4f6f9; --ink: #1c2430;
+  --bubble-user: #1d3557; --bubble-agent: #ffffff; --accent: #2a7a2a;
+}
+* { box-sizing: border-box; }
+/* Author display rules (flex on the panels) would otherwise override the
+   UA stylesheet's [hidden] handling - this keeps the hidden attribute honest. */
+[hidden] { display: none !important; }
+body {
+  margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg); color: var(--ink); height: 100vh;
+}
+
+/* ---- login ---- */
+.center-panel { display: flex; align-items: center; justify-content: center; height: 100vh; }
+.card {
+  background: #fff; padding: 40px 44px; border-radius: 10px; width: 360px;
+  box-shadow: 0 8px 30px rgba(20, 38, 62, .12);
+}
+.card h1 { margin: 0; color: var(--navy); }
+.card .sub { margin-top: 2px; }
+.card label { display: block; margin: 16px 0 4px; font-size: 13px; color: #566; }
+.card input {
+  width: 100%; padding: 10px 12px; font-size: 15px;
+  border: 1px solid #c6cdd6; border-radius: 6px;
+}
+.card button {
+  width: 100%; margin-top: 22px; padding: 11px; font-size: 15px;
+  background: var(--navy); color: #fff; border: 0; border-radius: 6px; cursor: pointer;
+}
+.card button:hover { background: var(--navy-dark); }
+.hint { font-size: 12px; color: #789; margin-top: 14px; }
+.error { color: #a33; font-size: 13px; }
+.sub { color: #667a90; font-size: 13px; }
+
+/* ---- chat ---- */
+#chat-panel { display: flex; flex-direction: column; height: 100vh; }
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff; padding: 12px 20px; border-bottom: 1px solid #e2e7ee;
+}
+header strong { color: var(--navy); font-size: 17px; margin-right: 10px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.badge {
+  display: inline-block; background: #fdf1d7; color: #8a6d1a; font-size: 11px;
+  font-weight: 600; padding: 3px 9px; border-radius: 999px; letter-spacing: .4px;
+  border: 1px solid #ecd9a0; margin: 6px 0 0;
+}
+.chip {
+  background: #e8eef7; color: var(--navy); font-size: 12px; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px; letter-spacing: .3px;
+}
+.ghost {
+  background: transparent; border: 1px solid #c6cdd6; border-radius: 6px;
+  padding: 6px 12px; cursor: pointer; color: #566; font-size: 13px;
+}
+
+#messages { flex: 1; overflow-y: auto; padding: 24px 0; }
+.msg { max-width: 720px; margin: 10px auto; padding: 0 20px; display: flex; }
+.msg .bubble {
+  padding: 12px 16px; border-radius: 14px; line-height: 1.45; font-size: 15px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.msg.user { justify-content: flex-end; }
+.msg.user .bubble { background: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
+.msg.agent .bubble {
+  background: var(--bubble-agent); border: 1px solid #e2e7ee;
+  border-bottom-left-radius: 4px;
+}
+.msg.system .bubble { background: #fdf6e3; border: 1px solid #eadfb8; font-size: 13px; color: #6b5d2e; }
+.msg .bubble.thinking::after { content: '…'; animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+
+#upload-strip {
+  display: flex; gap: 10px; align-items: center; max-width: 720px;
+  margin: 0 auto 8px; padding: 10px 16px; background: #eef4ec;
+  border: 1px solid #cfe0cb; border-radius: 10px; font-size: 14px;
+}
+#upload-strip button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+#upload-strip button.ghost { background: transparent; color: #566; border: 1px solid #c6cdd6; }
+
+footer {
+  display: flex; gap: 10px; padding: 14px 20px 20px; background: transparent;
+  max-width: 760px; margin: 0 auto; width: 100%;
+}
+footer textarea {
+  flex: 1; resize: none; padding: 12px 14px; font-size: 15px; font-family: inherit;
+  border: 1px solid #c6cdd6; border-radius: 10px;
+}
+footer button {
+  background: var(--navy); color: #fff; border: 0; border-radius: 10px;
+  padding: 0 22px; font-size: 15px; cursor: pointer;
+}
+footer button:disabled { opacity: .5; cursor: default; }

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of Workshopia — Business Registry</title>
+<style>
+  body { font-family: Georgia, serif; margin: 0; background: #f4f1ea; color: #222; }
+  header { background: #1d3557; color: #fff; padding: 20px 32px; }
+  header h1 { margin: 0; font-size: 22px; font-weight: normal; }
+  header p { margin: 4px 0 0; font-size: 13px; color: #cfd8e3; }
+  main { max-width: 760px; margin: 32px auto; padding: 0 16px; }
+  .searchbox { display: flex; gap: 8px; }
+  input[type=search] { flex: 1; padding: 10px 12px; font-size: 15px; border: 1px solid #999;
+    border-radius: 3px; }
+  button { padding: 10px 22px; font-size: 15px; background: #1d3557; color: #fff;
+    border: none; border-radius: 3px; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; margin-top: 24px; background: #fff; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ddd; font-size: 14px; }
+  th { background: #e9ecef; font-weight: 600; }
+  .status-ACTIVE { color: #2a7a2a; font-weight: 600; }
+  .status-DISSOLVED { color: #a33; font-weight: 600; }
+  .noresults { margin-top: 24px; padding: 16px; background: #fff3cd; border: 1px solid #e0c86e;
+    border-radius: 3px; font-size: 14px; }
+  footer { text-align: center; font-size: 12px; color: #888; margin: 48px 0 24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>State of Workshopia &mdash; Department of Commerce</h1>
+  <p>Registered Business Entity Search (workshop mock &mdash; all data fictional)</p>
+</header>
+<main>
+  <div class="searchbox">
+    <input type="search" id="q" placeholder="Business entity name" aria-label="Business entity name">
+    <button id="go">Search</button>
+  </div>
+  <div id="results"></div>
+</main>
+<footer>LoanBuddy AgentCore Workshop &mdash; not a real registry.</footer>
+<script>
+const ENTITIES = [
+  { name: "Mercy General Hospital",        status: "ACTIVE",    since: "1987-03-12", type: "Nonprofit Corporation", id: "WK-0048221" },
+  { name: "Mercy General Medical Group",   status: "ACTIVE",    since: "2004-09-01", type: "Professional LLC",      id: "WK-0192837" },
+  { name: "Workshopia Power & Light",      status: "ACTIVE",    since: "1954-06-30", type: "Corporation",           id: "WK-0000917" },
+  { name: "Cedar Grove Logistics LLC",     status: "ACTIVE",    since: "2015-11-19", type: "LLC",                   id: "WK-0311244" },
+  { name: "Pinnacle Widgets Inc",          status: "DISSOLVED", since: "1998-02-14", type: "Corporation",           id: "WK-0077810" },
+  { name: "Sunrise Diner LLC",             status: "ACTIVE",    since: "2019-04-02", type: "LLC",                   id: "WK-0355102" },
+  { name: "Harbor Point Staffing",         status: "ACTIVE",    since: "2011-08-23", type: "Corporation",           id: "WK-0244551" },
+];
+function search() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const el = document.getElementById("results");
+  if (!q) { el.innerHTML = ""; return; }
+  const hits = ENTITIES.filter(e => e.name.toLowerCase().includes(q));
+  if (hits.length === 0) {
+    el.innerHTML = '<div class="noresults" id="no-results">No registered entities match your search. ' +
+      'Verify the exact legal business name and try again.</div>';
+    return;
+  }
+  el.innerHTML = '<table id="results-table"><thead><tr>' +
+    '<th>Entity name</th><th>Registration status</th><th>Registered since</th><th>Entity type</th><th>Registry ID</th>' +
+    '</tr></thead><tbody>' +
+    hits.map(e => `<tr><td>${e.name}</td><td class="status-${e.status}">${e.status}</td>` +
+      `<td>${e.since}</td><td>${e.type}</td><td>${e.id}</td></tr>`).join("") +
+    '</tbody></table>';
+}
+document.getElementById("go").addEventListener("click", search);
+document.getElementById("q").addEventListener("keydown", e => { if (e.key === "Enter") search(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+version: 2.0
+
+defaultLocaleCode: en-US
+localeCodes:
+  - en-US
+
+# Optional: have Workshop Studio pre-deploy the base infrastructure into
+# vended event accounts. Attendees still run scripts/bootstrap.sh afterwards
+# (idempotent) - it seeds Cognito users, generates dated sample documents,
+# publishes the UI, and writes workshop-env.sh, none of which CloudFormation
+# does alone.
+infrastructure:
+  cloudformationTemplates:
+    - templateLocation: static/loanbuddy-infra.yaml
+      label: LoanBuddy base infrastructure (Cognito, DynamoDB, S3, CloudFront, mock Experian, IAM)
+      parameters:
+        - templateParameter: ResourcePrefix
+          defaultValue: loanbuddy
+
+awsAccountConfig:
+  accountSources:
+    - workshop_studio
+    - customer_provided
+  participantRole:
+    managedPolicies:
+      - arn:aws:iam::aws:policy/AdministratorAccess
+  regionConfiguration:
+    minAccessibleRegions: 1
+    maxAccessibleRegions: 1
+    accessibleRegions:
+      required:
+        - us-east-1
+    deployableRegions:
+      required:
+        - us-east-1

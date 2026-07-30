@@ -1,0 +1,8 @@
+# bedrock-agentcore is pinned <1.2 by strands-agents-tools 0.8.5; this agent
+# only needs the strands browser wrapper, so it rides that compatible line.
+bedrock-agentcore>=1.1.0,<1.2.0
+strands-agents==1.48.0
+strands-agents-tools[agent_core_browser]==0.8.5
+mcp>=1.19.0
+boto3>=1.40.0
+aws-opentelemetry-distro>=0.12.1
