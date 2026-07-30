@@ -34,7 +34,7 @@ Model access) before proceeding.
 ## 2. Get the code
 
 ```bash
-git clone <YOUR-REPO-URL> loanbuddy-workshop
+git clone https://gitlab.aws.dev/anjayan/agentcore-loanbuddy-workshop.git loanbuddy-workshop
 cd loanbuddy-workshop
 ```
 
