@@ -16,6 +16,10 @@ infrastructure:
       parameters:
         - templateParameter: ResourcePrefix
           defaultValue: loanbuddy
+        - templateParameter: AssetsBucketName
+          defaultValue: '{{.AssetsBucketName}}'
+        - templateParameter: AssetsBucketPrefix
+          defaultValue: '{{.AssetsBucketPrefix}}'
 
 awsAccountConfig:
   accountSources:

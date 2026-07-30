@@ -7,7 +7,10 @@
 # Re-run after changing agent code, UI, scripts, labs, or the seeder.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-STATIC="$ROOT/workshop-studio/static"
+# Event assets live in assets/ (staged by Workshop Studio into the per-event
+# assets bucket); static/ is only for files served on the content website.
+STATIC="$ROOT/workshop-studio/assets"
+mkdir -p "$STATIC"
 BUILD="$(mktemp -d)"
 trap 'rm -rf "$BUILD"' EXIT
 
