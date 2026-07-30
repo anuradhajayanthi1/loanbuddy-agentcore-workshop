@@ -12,7 +12,7 @@ localeCodes:
 infrastructure:
   cloudformationTemplates:
     - templateLocation: static/loanbuddy-infra.yaml
-      label: LoanBuddy base infrastructure (Cognito, DynamoDB, S3, CloudFront, mock Experian, IAM)
+      label: LoanBuddy base infrastructure
       parameters:
         - templateParameter: ResourcePrefix
           defaultValue: loanbuddy
