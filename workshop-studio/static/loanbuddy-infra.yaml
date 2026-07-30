@@ -11,6 +11,27 @@ Parameters:
     Type: String
     Default: loanbuddy
     Description: Prefix for named resources.
+  # Injected automatically by Workshop Studio at event provisioning. Empty in
+  # own-account deployments (bootstrap.sh seeds locally instead).
+  AssetsBucketName:
+    Type: String
+    Default: ''
+    Description: Workshop Studio event assets bucket (leave empty outside events).
+  AssetsBucketPrefix:
+    Type: String
+    Default: ''
+    Description: Key prefix of staged assets in the assets bucket.
+  AlicePassword:
+    Type: String
+    Default: 'LoanBuddy-alice-2026!'
+    Description: Workshop login for user alice (not a real secret).
+  BobPassword:
+    Type: String
+    Default: 'LoanBuddy-bob-2026!'
+    Description: Workshop login for user bob (not a real secret).
+
+Conditions:
+  IsHostedEvent: !Not [!Equals [!Ref AssetsBucketName, '']]
 
 Resources:
 
@@ -575,9 +596,104 @@ Resources:
                 Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
               # NOTE: no S3 access at all - this agent never sees documents.
 
+  # ---------------------------------------------------------------------------
+  # Workshop Seeder (AWS-hosted events only): performs bootstrap.sh's seeding
+  # at provisioning time - Cognito users, freshly-dated sample documents, and
+  # UI publication - and empties the buckets on stack deletion.
+  # ---------------------------------------------------------------------------
+
+  SeederRole:
+    Type: AWS::IAM::Role
+    Condition: IsHostedEvent
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-seeder-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: seeding
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CognitoSeedUsers
+                Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminSetUserPassword
+                Resource: !GetAtt UserPool.Arn
+              - Sid: ReadAssets
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub 'arn:aws:s3:::${AssetsBucketName}/${AssetsBucketPrefix}*'
+              - Sid: WriteWorkshopBuckets
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject   # preserve check reads existing config.js
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt DocsBucket.Arn
+                  - !Sub '${DocsBucket.Arn}/*'
+                  - !GetAtt UiBucket.Arn
+                  - !Sub '${UiBucket.Arn}/*'
+
+  SeederFunction:
+    Type: AWS::Lambda::Function
+    Condition: IsHostedEvent
+    Properties:
+      FunctionName: !Sub '${ResourcePrefix}-seeder'
+      Runtime: python3.12
+      Handler: handler.handler
+      Timeout: 300
+      MemorySize: 1024
+      Role: !GetAtt SeederRole.Arn
+      Code:
+        S3Bucket: !Ref AssetsBucketName
+        S3Key: !Sub '${AssetsBucketPrefix}seeder-lambda.zip'
+
+  Seeder:
+    Type: Custom::WorkshopSeeder
+    Condition: IsHostedEvent
+    DependsOn: [UiBucketPolicy, ExperianStage]
+    Properties:
+      ServiceToken: !GetAtt SeederFunction.Arn
+      SeedSerial: '4'   # bump to force a re-seed on stack update
+      Region: !Ref AWS::Region
+      AccountId: !Ref AWS::AccountId
+      UserPoolId: !Ref UserPool
+      SpaClientId: !Ref SpaClient
+      AlicePassword: !Ref AlicePassword
+      BobPassword: !Ref BobPassword
+      DocsBucket: !Ref DocsBucket
+      UiBucket: !Ref UiBucket
+      AssetsBucket: !Ref AssetsBucketName
+      AssetsPrefix: !Ref AssetsBucketPrefix
+
 Outputs:
   Region:
     Value: !Ref AWS::Region
+  AliceUsername:
+    Value: alice
+    Description: Workshop login 1 - use with AlicePassword at the UiUrl
+  AlicePassword:
+    Value: !Ref AlicePassword
+    Description: Password for alice (workshop value, not a real secret)
+  BobUsername:
+    Value: bob
+    Description: Workshop login 2 - use with BobPassword at the UiUrl
+  BobPassword:
+    Value: !Ref BobPassword
+    Description: Password for bob (workshop value, not a real secret)
+  CodeBundle:
+    Condition: IsHostedEvent
+    Value: !Sub 's3://${AssetsBucketName}/${AssetsBucketPrefix}loanbuddy-code.zip'
+    Description: Attendee code bundle - fetch with 'aws s3 cp <this> .' in CloudShell
   UserPoolId:
     Value: !Ref UserPool
   UserPoolDomain:

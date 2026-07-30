@@ -20,6 +20,9 @@ export AGENTCORE_SUPPRESS_RECOMMENDATION=1
 
 ## 2. Bootstrap
 
+At an AWS-hosted event this already ran for you at provisioning — run
+`./scripts/make-env.sh` instead and skip to step 3. In your own account:
+
 ```bash
 export AWS_PROFILE=<your-profile>
 export AWS_REGION=us-east-1
@@ -27,8 +30,9 @@ export AWS_REGION=us-east-1
 ```
 
 Takes about 6 minutes (CloudFront dominates). It prints your **workshop
-card** (also saved to `workshop-card.txt`) — keep it visible all day; every
-value you'll paste comes from it.
+card**, saved to `workshop-card.txt` in the workshop root — your
+quick-reference for every URL, login, and ID all day (`cat
+workshop-card.txt` any time).
 
 ## 3. Set your lab environment
 
@@ -42,9 +46,10 @@ echo "$UI_URL"
 
 ## 4. Inspect what exists — and what doesn't
 
-1. **Open the UI** (`echo $UI_URL`) and sign in as `alice` (password on your
-   card). Send a message. You'll get: *"The LoanBuddy agent isn't deployed
-   yet - that's Lab 1."* The product shell is live; the brain is missing.
+1. **Open the UI** — URL on your workshop card (or `echo $UI_URL`) — and
+   sign in as `alice` (password on the card). Send a message. You'll get:
+   *"The LoanBuddy agent isn't deployed yet - that's Lab 1."* The product
+   shell is live; the brain is missing.
 2. **The mock registry**: open `$REGISTRY_URL`, search "Mercy General".
    Lab 5's Browser agent will drive this exact page. (There's also a mock
    credit-bureau API in your stack — you'll meet it in Lab 3, right before
