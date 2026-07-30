@@ -10,12 +10,11 @@ spend ten minutes feeling the starting state.
 
 ## 1. The product shell, with no brain
 
-Open the UI — the URL is on your **workshop card** (`cat
-workshop-card.txt` from the workshop directory; at hosted events it is also
-in the Event outputs panel), or `echo $UI_URL` in a sourced terminal. Sign
-in as `alice` (password: same card / panel). Note the amber **account
-badge** on the login page — if you ever have two workshop tabs open, the
-badge tells you whose bank you are talking to.
+Open the UI — the URL is on your **workshop card** (`cat workshop-card.txt`
+from the workshop directory, or `echo $UI_URL` in a sourced terminal). Sign
+in as `alice` (password: same card). Note the amber **account badge** on the
+login page — if you ever have two workshop tabs open, the badge tells you
+whose bank you are talking to.
 
 Send any message. You get:
 

@@ -3,47 +3,22 @@ title: "Getting started"
 weight: 10
 ---
 
-::alert[All commands in this workshop run in **us-east-1**. If a console page looks empty, check the region selector first — it is the most common support question in any workshop.]{header="Region check"}
+::alert[This is a **self-paced, bring-your-own-account** workshop. Use a fresh AWS account you can administer and are comfortable creating resources in. Everything runs in **us-east-1** — if a console page looks empty, check the region selector first.]{header="Before you begin"}
 
-Pick your path:
+## 1. Prerequisites
 
-## A. At an AWS-hosted event
-
-Your account is provided, and the environment is **already seeded**: the UI
-is live, the users exist, and the sample documents are generated. The
-**Event outputs** panel on your event page shows the UI URL and both logins.
-
-You need a terminal: **CloudShell works** (open the AWS console from your
-event page, then the CloudShell icon in the top bar). Set up in four
-commands:
-
-```bash
-aws s3 cp $(aws cloudformation describe-stacks --stack-name loanbuddy-workshop \
-  --query "Stacks[0].Outputs[?OutputKey=='CodeBundle'].OutputValue" --output text) .
-unzip -q loanbuddy-code.zip -d loanbuddy-workshop && cd loanbuddy-workshop
-pip install --quiet bedrock-agentcore-starter-toolkit==0.3.10
-./scripts/make-env.sh && source workshop-env.sh
-```
-
-That fetches the code bundle from the event's assets bucket, installs the
-AgentCore CLI, and generates your **workshop card** (`workshop-card.txt`)
-and environment file from the pre-deployed stack.
-
-Skip to step "Load your lab environment" below — bootstrap already ran for
-you at provisioning time.
-
-## B. In your own account
-
-Use a fresh, disposable account you can administer, with **Amazon Bedrock
-model access** enabled for Anthropic Claude Sonnet in us-east-1 (Bedrock
-console -> Model access). On your machine: AWS CLI v2, Python 3.10+, and:
+- A disposable AWS account you can administer
+- **Amazon Bedrock model access** enabled for Anthropic Claude Sonnet in
+  us-east-1 (Bedrock console -> Model access -> enable Claude Sonnet)
+- On your machine: AWS CLI v2 (configured), Python 3.10+, Node.js 18+, git
+- The AgentCore CLI:
 
 ```bash
 pip install bedrock-agentcore-starter-toolkit==0.3.10
+export AGENTCORE_SUPPRESS_RECOMMENDATION=1
 ```
 
-Get the code and bootstrap (about 6 minutes; deploys the CloudFormation
-stack, seeds users, generates sample documents, publishes the UI):
+## 2. Get the code and bootstrap
 
 ```bash
 git clone https://gitlab.aws.dev/anjayan/agentcore-loanbuddy-workshop.git loanbuddy-workshop
@@ -52,20 +27,28 @@ export AWS_REGION=us-east-1
 ./scripts/bootstrap.sh
 ```
 
-## Load your lab environment (both paths)
+Takes about 6 minutes (CloudFront dominates). Bootstrap deploys the
+CloudFormation stack, seeds the `alice` and `bob` logins, generates
+freshly-dated sample documents, publishes the UI, and writes two files you
+will use all day:
 
-Run this **once in every terminal you open**, all day:
+- **`workshop-card.txt`** — every URL, login, and ID for the workshop
+  (`cat workshop-card.txt` any time)
+- **`workshop-env.sh`** — the environment for your lab terminals
+
+## 3. Load your lab environment
+
+Run this **once in every terminal you open**:
 
 ```bash
 source workshop-env.sh
 echo "$UI_URL"
 ```
 
-If the echo prints a CloudFront URL, you are wired up. Your quick-reference
-**workshop card** lives at `workshop-card.txt` in this directory — every
-URL, login, and ID for the day (`cat workshop-card.txt` any time).
+If the echo prints a CloudFront URL, you are wired up. (Re-running
+`./scripts/make-env.sh` regenerates these files from the stack at any time.)
 
-## Two rules that prevent every common mishap
+## 4. Two rules that prevent every common mishap
 
 1. **Copy code blocks without the fences.** Copy what is between the
    ` ``` ` lines, never the fence lines themselves.
@@ -73,4 +56,4 @@ URL, login, and ID for the day (`cat workshop-card.txt` any time).
    workshop-env.sh` again. Values born during labs (agent ARN, memory ID)
    each come with a one-line command that re-fetches them.
 
-Continue to **Lab 0** to inspect what was built for you.
+Continue to **Lab 0** to inspect what bootstrap built.

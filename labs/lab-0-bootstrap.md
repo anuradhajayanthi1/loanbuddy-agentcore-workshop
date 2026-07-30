@@ -20,9 +20,6 @@ export AGENTCORE_SUPPRESS_RECOMMENDATION=1
 
 ## 2. Bootstrap
 
-At an AWS-hosted event this already ran for you at provisioning — run
-`./scripts/make-env.sh` instead and skip to step 3. In your own account:
-
 ```bash
 export AWS_PROFILE=<your-profile>
 export AWS_REGION=us-east-1

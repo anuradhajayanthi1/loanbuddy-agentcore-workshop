@@ -3,10 +3,9 @@ title: "Cleanup"
 weight: 90
 ---
 
-::alert[At an AWS-hosted event, skip this page — the vended account is destroyed automatically after the workshop.]{header="Hosted events"}
-
-Running in your own account, remove resources in this order (AgentCore
-resources first, CloudFormation last).
+Since this workshop runs in your own account, clean up to stop all charges.
+Remove resources in this order (AgentCore resources first, CloudFormation
+last).
 
 ## 1. AgentCore resources (created during labs)
 

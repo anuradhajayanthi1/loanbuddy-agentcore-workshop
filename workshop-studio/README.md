@@ -38,27 +38,20 @@ static/
 4. Lab pages are GENERATED from ../labs/*.md. If you edit the labs, re-run
    the sync (see below) rather than editing both copies.
 
-## Event assets (the two zips)
+## Format: self-paced, own account
 
-Event assets do NOT travel through the content git repo. They are uploaded
-directly to the workshop's S3 assets channel:
+This workshop is delivered self-paced. Attendees clone the application repo
+and run `scripts/bootstrap.sh` in their own AWS account (see the
+Getting started page). Workshop Studio hosts only the CONTENT; it does not
+pre-provision infrastructure or ship code bundles as event assets.
 
-```
-s3://ws-content-<workshop-id>/<repository-name>/assets/
-```
-
-using the temporary credentials from the workshop's **Credentials** button.
-Procedure after changing agent code, UI, scripts, labs, or the seeder:
-
-```bash
-./scripts/build-assets.sh        # writes workshop-studio/assets/*.zip
-# source the Credentials-dialog exports, then:
-aws s3 cp workshop-studio/assets/seeder-lambda.zip  s3://ws-content-<id>/<repo>/assets/
-aws s3 cp workshop-studio/assets/loanbuddy-code.zip s3://ws-content-<id>/<repo>/assets/
-# trigger a new build (any push, or console) so it snapshots the assets
-```
-
-The build page's "Uploaded assets" count confirms the snapshot.
+Auto-provisioning into Workshop Studio-vended event accounts (a Seeder
+custom resource that seeds users, generates sample docs, and publishes the
+UI at provisioning time) is built and validated (`infra/seeder/`,
+`scripts/build-assets.sh`) but NOT wired into this package: it needs the
+Workshop Studio asset tooling (the `workshopstudio://` git helper or the
+magic-variables / assets-URL directive) to deliver the two zips into vended
+accounts. That is a v2 item for whoever has the Studio CLI in hand.
 
 ## Keeping labs in sync
 

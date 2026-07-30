@@ -4,22 +4,10 @@ defaultLocaleCode: en-US
 localeCodes:
   - en-US
 
-# Optional: have Workshop Studio pre-deploy the base infrastructure into
-# vended event accounts. Attendees still run scripts/bootstrap.sh afterwards
-# (idempotent) - it seeds Cognito users, generates dated sample documents,
-# publishes the UI, and writes workshop-env.sh, none of which CloudFormation
-# does alone.
-infrastructure:
-  cloudformationTemplates:
-    - templateLocation: static/loanbuddy-infra.yaml
-      label: LoanBuddy base infrastructure
-      parameters:
-        - templateParameter: ResourcePrefix
-          defaultValue: loanbuddy
-        - templateParameter: AssetsBucketName
-          defaultValue: '{{.AssetsBucketName}}'
-        - templateParameter: AssetsBucketPrefix
-          defaultValue: '{{.AssetsBucketPrefix}}'
+# This is a self-paced, bring-your-own-account workshop. Attendees clone the
+# repo and run scripts/bootstrap.sh, which deploys the CloudFormation stack
+# and seeds the environment. (Auto-provisioning into vended event accounts is
+# a future enhancement pending Workshop Studio asset tooling.)
 
 awsAccountConfig:
   accountSources:
