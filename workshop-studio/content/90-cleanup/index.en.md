@@ -3,7 +3,8 @@ title: "Cleanup"
 weight: 90
 ---
 
-Since this workshop runs in your own account, clean up to stop all charges.
+::alert[At an AWS-hosted event, the provided account is reclaimed automatically — you can skip this page. In your own account, clean up to stop all charges.]{header="Own-account only"}
+
 Remove resources in this order (AgentCore resources first, CloudFormation
 last).
 

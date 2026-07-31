@@ -60,15 +60,15 @@ User ──> UI (S3 + CloudFront) ──JWT──> supervisor (Runtime)
 |---|---|
 | Level | 300 (advanced) |
 | Duration | ~3 hours |
-| Format | Self-paced, in your own AWS account |
+| Format | Self-paced; runs at AWS-hosted events or in your own AWS account |
 | Region | us-east-1 only (single region is a deliberate simplification for a hands-on workshop; all resources are region-scoped) |
 | Background | Comfort with a terminal, basic AWS (IAM, S3, CloudFormation at a read level), and basic Python reading ability. No prior AgentCore experience required. |
 | Audience | Builders and solution architects designing agentic applications |
 
 ## Cost
 
-This workshop runs in **your own AWS account**. Expect **a few USD for the
-full workshop**, dominated by
+At an AWS-hosted event the account is provided at no cost to you. In your own
+account, expect **a few USD for the full workshop**, dominated by
 Amazon Bedrock model invocations (document vision analysis and agent
 reasoning), plus small charges for AgentCore Runtime/Memory/Gateway usage,
 CloudFront, S3, and DynamoDB. See [Amazon Bedrock
