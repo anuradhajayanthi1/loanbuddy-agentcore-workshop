@@ -108,12 +108,17 @@ directly (it supports CORS), token straight from Cognito to the front door.
 
 ### Troubleshooting
 
-- **Invoke returns HTTP 500 ("check CloudWatch logs")**: almost always a
-  deploy that didn't fully finish, or leftover deploy state. Confirm
-  `agentcore status` shows **Ready**, then re-invoke. If it persists, redo a
-  clean deploy: `rm -f .bedrock_agentcore.yaml` in `agents/supervisor/`, then
-  re-run the `agentcore configure` and `agentcore deploy` commands above (a
-  stale config can make `deploy` try to *update* a runtime that isn't there).
+- **First invoke returns HTTP 500 in a brand-new account**: the very first
+  Claude invocation triggers an AWS Marketplace subscription that completes
+  asynchronously (~2 minutes). `bootstrap.sh` warms this up for you, but if
+  you invoke within that window you may see a 500. Wait ~2 minutes and
+  re-invoke — no redeploy needed.
+- **500 that persists past a few minutes**: usually a deploy that didn't
+  fully finish, or leftover deploy state. Confirm `agentcore status` shows
+  **Ready**, then re-invoke. If it persists, redo a clean deploy: `rm -f
+  .bedrock_agentcore.yaml` in `agents/supervisor/`, then re-run the
+  `agentcore configure` and `agentcore deploy` commands above (a stale config
+  can make `deploy` try to *update* a runtime that isn't there).
 - **"Platform mismatch … linux/arm64"**: expected in CloudShell; the default
   `agentcore deploy` builds remotely in CodeBuild. Just wait for it.
 

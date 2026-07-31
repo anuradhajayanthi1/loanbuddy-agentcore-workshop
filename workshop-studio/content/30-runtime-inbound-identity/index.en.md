@@ -49,7 +49,7 @@ agentcore status        # wait for: Ready
 
 ::alert[If you see **"Platform mismatch: current system is linux/amd64 but Bedrock AgentCore requires linux/arm64"**, that is expected in CloudShell — it is informational. The default `agentcore deploy` does a remote ARM64 build in CodeBuild, so the deployment is correct. Just wait for it to finish.]{header="Expected warning"}
 
-::alert[**Invoke returns HTTP 500?** Confirm `agentcore status` shows **Ready**, then re-invoke. If it persists, do a clean redeploy: `rm -f .bedrock_agentcore.yaml`, then re-run `agentcore configure` and `agentcore deploy` (stale deploy state can make `deploy` try to update a runtime that isn't there).]{header="Troubleshooting 500s"}
+::alert[**First invoke returns HTTP 500 in a brand-new account?** The first Claude invocation triggers an AWS Marketplace subscription that finishes asynchronously (~2 min). Bootstrap warms this up, but if you land inside that window, wait ~2 minutes and re-invoke — no redeploy needed. If a 500 persists past a few minutes, confirm `agentcore status` is **Ready**; if needed, clean-redeploy: `rm -f .bedrock_agentcore.yaml`, then re-run `agentcore configure` and `agentcore deploy`.]{header="Troubleshooting 500s"}
 
 Capture the new runtime's ARN (works from any directory):
 

@@ -17,11 +17,15 @@ navigation bar). CloudShell already has the AWS CLI, git, and Python.
 **In your own account:** use a fresh AWS account you can administer, from
 your laptop terminal (AWS CLI v2 configured) or CloudShell.
 
-## 2. Enable Bedrock model access
+## 2. Bedrock model access (usually automatic)
 
-In the **Amazon Bedrock console -> Model access**, enable **Anthropic Claude
-Sonnet** in us-east-1. (At some hosted events this is pre-enabled — if the
-list already shows access granted, continue.)
+Bedrock now enables models on first use — there is no manual model-access
+page to click through. The **first** Claude invocation in a brand-new
+account kicks off a one-time AWS Marketplace subscription that activates
+after ~2 minutes. The bootstrap in the next step **warms this up for you**,
+so by the time you reach Lab 1 it is ready. (If you ever see a 500 or a
+"subscription pending" error on a very first invoke, just wait ~2 minutes
+and retry.)
 
 ## 3. Get the code and bootstrap
 

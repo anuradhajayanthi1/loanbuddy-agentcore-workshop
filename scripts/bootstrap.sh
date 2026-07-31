@@ -80,6 +80,18 @@ aws s3 cp "${PROFILE_ARG[@]}" --region "$REGION" --quiet \
   "$ROOT/infra/seed/registry-site/index.html" "s3://$UI_BUCKET/registry/index.html"
 
 # ---------------------------------------------------------------------------
+say "Warming up Bedrock model access (first Claude invoke in a fresh account"
+say "triggers an async AWS Marketplace subscription that takes ~2 minutes)"
+# Fire-and-forget: the first invoke initiates the subscription even if it
+# returns an error; by the time the attendee reaches Lab 1 it has completed,
+# so their first agent invoke won't 500 on a pending subscription.
+MODEL_ID="${MODEL_ID:-us.anthropic.claude-sonnet-4-5-20250929-v1:0}"
+aws bedrock-runtime converse "${PROFILE_ARG[@]}" --region "$REGION" \
+  --model-id "$MODEL_ID" \
+  --messages '[{"role":"user","content":[{"text":"warmup"}]}]' \
+  >/dev/null 2>&1 && echo "  model access ready" \
+  || echo "  subscription initiated (may take ~2 min to activate - this is expected)"
+
 say "Writing workshop-env.sh and workshop-card.txt"
 "$ROOT/scripts/make-env.sh"
 say "Done. Your workshop card:"
