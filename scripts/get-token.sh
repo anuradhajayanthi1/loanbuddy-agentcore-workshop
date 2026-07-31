@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fetch a Cognito access token for a workshop user (Lab 1's proof tests).
 # Usage: scripts/get-token.sh alice
-set -euo pipefail
+set -eo pipefail
 
 USER="${1:?usage: get-token.sh <alice|bob>}"
 STACK="${STACK:-loanbuddy-workshop}"

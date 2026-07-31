@@ -5,7 +5,7 @@
 #
 # Use it to catch up if you joined late or a lab step went sideways.
 # Requires: scripts/bootstrap.sh already run (Lab 0).
-set -euo pipefail
+set -eo pipefail
 
 LAB="${1:?usage: checkpoint.sh <1|2|3|4|5|6>}"
 STACK="${STACK:-loanbuddy-workshop}"

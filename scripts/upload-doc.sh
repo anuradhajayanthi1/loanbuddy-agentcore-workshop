@@ -7,7 +7,7 @@
 #   scripts/upload-doc.sh alice government_id infra/seed/sample-docs/alice-id.png
 #
 # Prints the exact chat message to paste so the agent analyzes the document.
-set -euo pipefail
+set -eo pipefail
 
 USER="${1:?usage: upload-doc.sh <alice|bob> <government_id|paystub|bank_statement> <file>}"
 DOC_TYPE="${2:?missing doc type: government_id | paystub | bank_statement}"

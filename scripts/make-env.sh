@@ -5,7 +5,7 @@
 #
 #   ./scripts/make-env.sh
 #   source workshop-env.sh
-set -euo pipefail
+set -eo pipefail
 
 STACK="${STACK:-loanbuddy-workshop}"
 REGION="${AWS_REGION:-us-east-1}"

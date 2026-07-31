@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # LoanBuddy workshop bootstrap: everything that is NOT an AgentCore primitive.
 # Idempotent - safe to re-run.
-set -euo pipefail
+set -eo pipefail
 
 STACK="${STACK:-loanbuddy-workshop}"
 PREFIX="${PREFIX:-loanbuddy}"

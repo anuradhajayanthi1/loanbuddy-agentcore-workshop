@@ -4,7 +4,7 @@
 # then force-pushes the workshop to main.
 #
 #   scripts/publish-to-github.sh
-set -euo pipefail
+set -eo pipefail
 
 REPO_URL="${GITHUB_REPO_URL:-https://github.com/anuradhajayanthi1/loanbuddy-agentcore-workshop.git}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

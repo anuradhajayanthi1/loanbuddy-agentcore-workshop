@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Point the deployed UI at the supervisor agent runtime (end of Lab 1).
 # Usage: scripts/wire-ui.sh <agent-runtime-arn>
-set -euo pipefail
+set -eo pipefail
 
 ARN="${1:?usage: wire-ui.sh <agent-runtime-arn>}"
 STACK="${STACK:-loanbuddy-workshop}"

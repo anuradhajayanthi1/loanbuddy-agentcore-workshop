@@ -5,7 +5,7 @@
 #   loanbuddy-code.zip  - the attendee code bundle (fetched from the event
 #                         assets bucket; also what the Seeder reads ui/ from)
 # Re-run after changing agent code, UI, scripts, labs, or the seeder.
-set -euo pipefail
+set -eo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # Event assets live in assets/ (staged by Workshop Studio into the per-event
 # assets bucket); static/ is only for files served on the content website.
