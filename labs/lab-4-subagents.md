@@ -111,6 +111,25 @@ The walk:
 4. Watch the supervisor call `check_docs_complete` to drive what it asks for
    next — it never guesses document status from conversation.
 
+**How to watch the tool calls.** Open a **second terminal** and tail the
+supervisor's runtime log while you chat in the UI. Each tool the agent
+invokes prints a `Tool #N: <name>` line:
+
+```bash
+cd ~/loanbuddy-workshop && source workshop-env.sh
+RT=$(aws bedrock-agentcore-control list-agent-runtimes \
+  --query "agentRuntimes[?starts_with(agentRuntimeName,'loanbuddy_supervisor')].agentRuntimeId | [0]" \
+  --output text)
+aws logs tail "/aws/bedrock-agentcore/runtimes/${RT}-DEFAULT" --follow --format short \
+  | grep --line-buffered -E "Tool #|gateway tools"
+```
+
+Now send a message in the UI (e.g. "what do I still need?"). You'll see the
+supervisor call `get_or_create_application`, then
+`doc-coordinator___check_docs_complete`, and only then answer — proof it
+reads document status from the ledger, never from the conversation. Ctrl+C
+the tail when done.
+
 Note the latency: `analyze_document` takes ~20 seconds because an entire
 agent loop runs behind that tool call. Encapsulation has a price; Lab 6
 itemizes it.
