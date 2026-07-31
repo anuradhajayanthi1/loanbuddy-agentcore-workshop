@@ -31,34 +31,104 @@ break on the first applicant with unusual pay patterns.
 
 ## 2. Watch Code Interpreter underwrite Alice
 
-In the UI as **alice** (docs complete from Lab 4): *"Please run my credit
-assessment for the $15,000 over 36 months."*
+The Code Interpreter session **only runs during a credit assessment**, and
+`assess_credit` will refuse until **all three of Alice's documents are
+ACCEPTED** (it needs the verified ID for the credit pull and the analyzed
+bank statement for income). So there is a strict order here. If you skip
+ahead, the agent politely refuses and no session ever starts — that is
+expected, not a bug.
 
-~90 seconds later: PRIME tier, a rate band, and a **scenario table** —
-payments at 24/36/48 months. While it runs, tail the analyst:
+### 2a. Confirm the prerequisite — all docs ACCEPTED
 
 ```bash
-aws logs tail "/aws/bedrock-agentcore/runtimes/$(aws bedrock-agentcore-control \
-  list-agent-runtimes --query "agentRuntimes[?starts_with(agentRuntimeName,'loanbuddy_credit_analyst')].agentRuntimeArn | [0]" \
-  --output text | awk -F/ '{print $NF}')-DEFAULT" --since 5m --follow
+ALICE=$(aws dynamodb scan --table-name "$TABLE" --query 'Items[0].applicant_id.S' --output text)
+aws dynamodb get-item --table-name "$TABLE" --key "{\"applicant_id\":{\"S\":\"$ALICE\"}}" \
+  --query 'Item.documents.M.{id:government_id.M.status.S,paystub:paystub.M.status.S,statement:bank_statement.M.status.S}'
 ```
 
-You'll see the model *write pandas code* and execute it in a sandbox
-session. That sandbox has **zero AWS credentials** — data in, numbers out.
-Ask a follow-up: *"what about 48 months?"* — instant, because the scenario
-table already came back with the assessment (design choice: precompute the
-what-ifs, don't re-round-trip).
+You need all three to read **`ACCEPTED`**. If `paystub` or `statement` shows
+`MISSING`, finish them first (2b). If all three are `ACCEPTED`, jump to 2c.
 
-Then the sanity check that motivates the whole primitive: ask any bare LLM
-to compute a 36-month amortized payment at 10.25% in its head, and compare
+### 2b. Complete any missing documents
+
+**Easiest — the UI upload button:** tell the agent "I'd like to upload my
+paystub", click the **Upload** control that appears, pick the file. The UI
+captures the real S3 key for you automatically.
+
+**Or the CLI helper.** Run it, then paste the line it prints **exactly as
+printed** — it contains a real S3 key (a UUID and timestamp). Do **not** type
+a shortened or example path; the agent needs the complete key:
+
+```bash
+./scripts/upload-doc.sh alice paystub infra/seed/sample-docs/alice-paystub.png
+```
+
+It prints a block like:
+
+```
+Paste this into the chat as alice:
+------------------------------------------------------------
+I've uploaded my paystub. Its s3_key is docs/<real-uuid>/paystub-cli<real-timestamp>.png. Please analyze it.
+------------------------------------------------------------
+```
+
+Copy that **whole middle line (with the real key)** into the chat. Wait for
+the agent's **ACCEPTED** reply (~40–60s for the paystub — it also runs the
+Browser employer check, see section 3). Repeat for the statement:
+
+```bash
+./scripts/upload-doc.sh alice bank_statement infra/seed/sample-docs/alice-statement-90d.png
+```
+
+Re-run the 2a check until all three read `ACCEPTED`.
+
+### 2c. Start the tail, then run the assessment
+
+The Code Interpreter session is short-lived — to see it, start watching the
+Credit Analyst log **before** you trigger the assessment. In one terminal:
+
+```bash
+RT=$(aws bedrock-agentcore-control list-agent-runtimes \
+  --query "agentRuntimes[?starts_with(agentRuntimeName,'loanbuddy_credit_analyst')].agentRuntimeId | [0]" \
+  --output text)
+aws logs tail "/aws/bedrock-agentcore/runtimes/${RT}-DEFAULT" --follow --format short
+```
+
+Then, in the UI as **alice**: *"Please run my credit assessment for $15,000
+over 36 months."*
+
+~90 seconds later the chat shows a PRIME tier, a rate band, and a **scenario
+table** (payments at 24/36/48 months). In the log terminal you'll see the
+model **write Python and execute it in a sandbox session** — the sandbox has
+**zero AWS credentials** (data in, numbers out). In the AgentCore console
+(Built-in tools -> Code Interpreter), refresh during this window to catch the
+ACTIVE session; the Observability panel there also records "Started sessions"
+after the fact.
+
+### 2d. Confirm it ran
+
+The `dti` and `scenarios` fields exist **only** because the sandbox computed
+them, so their presence is proof the Code Interpreter ran:
+
+```bash
+aws dynamodb get-item --table-name "$TABLE" --key "{\"applicant_id\":{\"S\":\"$ALICE\"}}" \
+  --query 'Item.credit.M.assessment.M.{tier:tier.S,dti:dti.N,scenarios:scenarios.L}'
+```
+
+Then the sanity check that motivates the whole primitive: ask any bare LLM to
+compute a 36-month amortized payment at 10.25% in its head, and compare
 against the sandbox's answer. Money math belongs in a calculator.
 
 ## 3. Watch Browser verify an employer
 
 Bob's paystub names an employer his bank statement abbreviates and the state
-registry has never heard of. As **bob**: run intake if needed (*"$15,000
-debt consolidation, 36 months, I make $124,000 at Apex Fabrication Co"*),
-then upload `bob-id.png` and `bob-paystub.png`.
+registry has never heard of. As **bob** (sign in as bob), run intake if
+needed (*"$15,000 debt consolidation, 36 months, I make $124,000 at Apex
+Fabrication Co"*), then upload his ID and paystub using the same method as
+section 2b (UI upload button, or `./scripts/upload-doc.sh bob government_id
+infra/seed/sample-docs/bob-id.png` and `... bob paystub
+infra/seed/sample-docs/bob-paystub.png` — pasting each printed line with its
+real key):
 
 During paystub analysis, the Doc Coordinator starts an AgentCore **Browser**
 session, drives the registry site you saw in Lab 0 — types the employer
