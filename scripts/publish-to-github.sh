@@ -6,7 +6,7 @@
 #   scripts/publish-to-github.sh
 set -euo pipefail
 
-REPO_URL="${GITHUB_REPO_URL:-https://github.com/anuradhajayanthi1/security-agent.git}"
+REPO_URL="${GITHUB_REPO_URL:-https://github.com/anuradhajayanthi1/loanbuddy-agentcore-workshop.git}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 

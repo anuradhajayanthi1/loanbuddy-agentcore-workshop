@@ -26,7 +26,7 @@ list already shows access granted, continue.)
 ## 3. Get the code and bootstrap
 
 ```bash
-git clone https://github.com/anuradhajayanthi1/security-agent.git loanbuddy-workshop
+git clone https://github.com/anuradhajayanthi1/loanbuddy-agentcore-workshop.git loanbuddy-workshop
 cd loanbuddy-workshop
 pip install bedrock-agentcore-starter-toolkit==0.3.10
 export AWS_REGION=us-east-1
