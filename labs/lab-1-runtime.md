@@ -106,6 +106,17 @@ tab) and watch the `Bearer` token ride each `/runtimes/...` call — there is
 no backend server here — the SPA calls the Runtime's data-plane endpoint
 directly (it supports CORS), token straight from Cognito to the front door.
 
+### Troubleshooting
+
+- **Invoke returns HTTP 500 ("check CloudWatch logs")**: almost always a
+  deploy that didn't fully finish, or leftover deploy state. Confirm
+  `agentcore status` shows **Ready**, then re-invoke. If it persists, redo a
+  clean deploy: `rm -f .bedrock_agentcore.yaml` in `agents/supervisor/`, then
+  re-run the `agentcore configure` and `agentcore deploy` commands above (a
+  stale config can make `deploy` try to *update* a runtime that isn't there).
+- **"Platform mismatch … linux/arm64"**: expected in CloudShell; the default
+  `agentcore deploy` builds remotely in CodeBuild. Just wait for it.
+
 **Exit state**: authenticated humans chat with a deployed loan officer. But
 sign out and back in — the agent greets you like a stranger, every time.
 (Structured intake fields do land in the DynamoDB ledger, but the agent has
