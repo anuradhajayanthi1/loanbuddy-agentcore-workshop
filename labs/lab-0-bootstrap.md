@@ -64,10 +64,16 @@ cannot call the credit bureau. Keep that thought for Lab 4.
 
 ## 5. Meet the code
 
-Skim `agents/supervisor/prompts.py` (what the loan officer TRIES to do) and
-`agents/supervisor/agent.py` (note the env-var gates: `MEMORY_ID`,
-`GATEWAY_URL`). The application is complete; your job across labs 1–6 is to
-give it the AgentCore primitives it's written against.
+Skim these two files — the loan officer's persona, and the entrypoint whose
+env-var gates (`MEMORY_ID`, `GATEWAY_URL`) the labs light up one by one:
+
+```bash
+cat agents/supervisor/prompts.py    # what the loan officer TRIES to do
+cat agents/supervisor/agent.py      # note the MEMORY_ID / GATEWAY_URL gates
+```
+
+The application is complete; your job across labs 1–6 is to give it the
+AgentCore primitives it's written against.
 
 **Exit state**: live UI with no agent, seeded users, mock third parties, and
 pre-scoped IAM roles. Fell behind later? `scripts/checkpoint.sh <lab>`

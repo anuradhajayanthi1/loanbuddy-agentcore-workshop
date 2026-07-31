@@ -49,6 +49,11 @@ thought.
 
 Skim these two files in your clone:
 
+```bash
+cat agents/supervisor/prompts.py    # the loan officer's persona
+cat agents/supervisor/agent.py      # note the MEMORY_ID / GATEWAY_URL gates
+```
+
 - `agents/supervisor/prompts.py` — what the loan officer **tries** to do
 - `agents/supervisor/agent.py` — note the env-var gates (`MEMORY_ID`,
   `GATEWAY_URL`): the code is complete, and the labs light it up with

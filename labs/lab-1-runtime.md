@@ -9,7 +9,7 @@ claim becomes the applicant ID that scopes everything downstream.**
 All lab commands use `$VARIABLES` so you never copy values by hand. Load them:
 
 ```bash
-cd <your-workshop-directory>     # the folder containing workshop-env.sh
+cd ~/loanbuddy-workshop          # the folder you cloned into
 source workshop-env.sh
 echo "$SUPERVISOR_ROLE"          # must print an IAM role ARN - if empty, stop and re-source
 ```
@@ -43,6 +43,8 @@ Three flags worth understanding (not just pasting):
 agentcore deploy -env TABLE_NAME="$TABLE" -env DOCS_BUCKET="$DOCS_BUCKET"
 agentcore status        # wait for: Ready
 ```
+
+::alert[If you see **"Platform mismatch: current system is linux/amd64 but Bedrock AgentCore requires linux/arm64"**, that is expected in CloudShell — it is informational. The default `agentcore deploy` does a remote ARM64 build in CodeBuild, so the deployment is correct. Just wait for it to finish.]{header="Expected warning"}
 
 Capture the new runtime's ARN (works from any directory):
 
