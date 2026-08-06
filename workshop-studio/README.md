@@ -19,9 +19,6 @@ content/
   80-observability/             Lab 6
   90-cleanup/
   95-conclusion/
-static/
-  loanbuddy-infra.yaml      Copy of infra/template.yaml, referenced by
-                            contentspec for optional event pre-provisioning
 ```
 
 ## Publishing
