@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Doc Coordinator's view of the application ledger.
 
 This agent's IAM role permits GetItem/UpdateItem on the applications table

@@ -1,3 +1,5 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: MIT-0
 // LoanBuddy UI configuration.
 // scripts/bootstrap.sh writes the real values; this placeholder ships in git.
 window.LOANBUDDY = {

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # Upload a loan document on behalf of a workshop user, the CLI way.
 # (The UI's upload button is the product path - this is the deterministic
 # fallback, and handy for scripting.)

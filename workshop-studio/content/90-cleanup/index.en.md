@@ -39,6 +39,7 @@ aws bedrock-agentcore-control delete-oauth2-credential-provider \
 ```bash
 aws s3 rm "s3://$DOCS_BUCKET" --recursive
 aws s3 rm "s3://$(out UiBucket)" --recursive
+aws s3 rm "s3://$(out AccessLogsBucket)" --recursive
 ```
 
 ## 3. The CloudFormation stack

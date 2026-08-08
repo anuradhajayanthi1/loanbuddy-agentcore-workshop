@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Credit Analyst - an agent deployed as an MCP server on AgentCore Runtime.
 
 Both a Gateway TARGET (the supervisor calls assess_credit through the

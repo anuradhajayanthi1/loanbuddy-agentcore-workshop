@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # Generate workshop-env.sh and workshop-card.txt from the CloudFormation
 # stack outputs. Called by bootstrap.sh; also safe to re-run directly any
 # time to regenerate both files from the deployed stack:

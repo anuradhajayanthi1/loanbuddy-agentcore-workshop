@@ -1,0 +1,78 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WorkshopServices",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:*",
+        "s3:*",
+        "dynamodb:*",
+        "cognito-idp:*",
+        "cloudfront:*",
+        "lambda:*",
+        "apigateway:*",
+        "ecr:*",
+        "codebuild:*",
+        "logs:*",
+        "cloudwatch:*",
+        "xray:*",
+        "bedrock:*",
+        "bedrock-agentcore:*",
+        "secretsmanager:*",
+        "cloudshell:*",
+        "sts:GetCallerIdentity",
+        "sts:DecodeAuthorizationMessage"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BedrockMarketplaceModelSubscription",
+      "Effect": "Allow",
+      "Action": [
+        "aws-marketplace:Subscribe",
+        "aws-marketplace:ViewSubscriptions",
+        "aws-marketplace:Unsubscribe"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IamReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "iam:Get*",
+        "iam:List*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IamWorkshopRolesOnly",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:UpdateRole",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/loanbuddy-*",
+        "arn:aws:iam::*:role/*BedrockAgentCore*",
+        "arn:aws:iam::*:role/*bedrock-agentcore*",
+        "arn:aws:iam::*:role/agentcore-*"
+      ]
+    },
+    {
+      "Sid": "ServiceLinkedRoles",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "*"
+    }
+  ]
+}

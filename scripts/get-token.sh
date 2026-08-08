@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # Fetch a Cognito access token for a workshop user (Lab 1's proof tests).
 # Usage: scripts/get-token.sh alice
 set -eo pipefail

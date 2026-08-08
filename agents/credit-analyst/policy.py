@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Lending policy: PLAIN CODE, on purpose.
 
 These rules must produce identical results for identical inputs, every run,

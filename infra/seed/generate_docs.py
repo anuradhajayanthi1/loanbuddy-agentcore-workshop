@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Generate the workshop's sample loan documents as PNG images.
 
 Run at bootstrap time (not committed as static assets) so that statement and

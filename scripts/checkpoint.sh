@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # Bring the environment to the end-of-lab-N state, idempotently.
 #
 #   scripts/checkpoint.sh 3     # everything through Lab 3

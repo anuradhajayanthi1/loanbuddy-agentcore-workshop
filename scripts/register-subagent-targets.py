@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Register (or re-register) the subagent runtimes as mcpServer targets on
 the LoanBuddy gateway, with OAuth client-credentials the Gateway presents to
 each JWT-authorized runtime.

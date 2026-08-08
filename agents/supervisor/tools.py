@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Supervisor's local tools: the DDB application ledger + presigned uploads.
 
 These are LOCAL Strands tools, compiled into the agent. Contrast with the

@@ -110,6 +110,38 @@ Resources:
         - AttributeName: applicant_id
           KeyType: HASH
 
+  AccessLogsBucket:
+    # Server-access-log destination for the docs and UI buckets.
+    Type: AWS::S3::Bucket
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_18
+            comment: This IS the access-logs bucket; logging it to itself would recurse.
+    Properties:
+      BucketName: !Sub '${ResourcePrefix}-access-logs-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  AccessLogsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AccessLogsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: S3ServerAccessLogsPolicy
+            Effect: Allow
+            Principal: { Service: logging.s3.amazonaws.com }
+            Action: s3:PutObject
+            Resource: !Sub '${AccessLogsBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+
   DocsBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -119,6 +151,9 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AccessLogsBucket
+        LogFilePrefix: docs-access/
       CorsConfiguration:
         CorsRules:
           # Workshop-grade: '*' avoids a circular dependency with CloudFront.
@@ -137,6 +172,9 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AccessLogsBucket
+        LogFilePrefix: ui-access/
 
   UiBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -332,6 +370,16 @@ Resources:
   # blocks are intentionally repeated verbatim in all three roles.
   SupervisorRole:
     Type: AWS::IAM::Role
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_111
+            comment: >-
+              Remaining Resource:'*' statements are limited to actions that do
+              not support resource-level permissions (aws-marketplace
+              Subscribe/ViewSubscriptions, ecr:GetAuthorizationToken, X-Ray
+              writes, cloudwatch:PutMetricData). All scopable actions are
+              scoped to account/region ARNs.
     Properties:
       RoleName: !Sub '${ResourcePrefix}-supervisor-role'
       AssumeRolePolicyDocument:
@@ -353,24 +401,35 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
-                Resource: '*'
+                Resource:
+                  # Foundation models in every region: the cross-region
+                  # inference profile routes to models outside this region.
+                  - 'arn:aws:bedrock:*::foundation-model/*'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*'
               - Sid: BedrockMarketplaceSubscribe
                 # Anthropic models on Bedrock are served via AWS Marketplace;
                 # first invocation in a fresh account must auto-subscribe, which
                 # needs these actions. Without them the first InvokeModel 500s.
+                # aws-marketplace actions do not support resource-level
+                # permissions, so '*' is required here.
                 Effect: Allow
                 Action:
                   - aws-marketplace:Subscribe
                   - aws-marketplace:ViewSubscriptions
                 Resource: '*'
+              - Sid: EcrAuth
+                # ecr:GetAuthorizationToken does not support resource-level
+                # permissions, so '*' is required here.
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
               - Sid: EcrPull
                 Effect: Allow
                 Action:
-                  - ecr:GetAuthorizationToken
                   - ecr:BatchGetImage
                   - ecr:GetDownloadUrlForLayer
-                Resource: '*'
-              - Sid: Telemetry
+                Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/*'
+              - Sid: TelemetryLogs
                 Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -378,6 +437,14 @@ Resources:
                   - logs:PutLogEvents
                   - logs:DescribeLogGroups
                   - logs:DescribeLogStreams
+                Resource:
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:log-stream:*'
+              - Sid: TelemetryTraces
+                # X-Ray write/sampling actions and cloudwatch:PutMetricData do
+                # not support resource-level permissions, so '*' is required.
+                Effect: Allow
+                Action:
                   - xray:PutTraceSegments
                   - xray:PutTelemetryRecords
                   - xray:GetSamplingRules
@@ -390,7 +457,8 @@ Resources:
                   - bedrock-agentcore:GetWorkloadAccessToken
                   - bedrock-agentcore:GetWorkloadAccessTokenForJWT
                   - bedrock-agentcore:GetWorkloadAccessTokenForUserId
-                Resource: '*'
+                Resource:
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:workload-identity-directory/*'
         - PolicyName: supervisor-boundaries
           PolicyDocument:
             Version: '2012-10-17'
@@ -421,7 +489,9 @@ Resources:
                 Effect: Allow
                 Action:
                   - bedrock-agentcore:GetResourceOauth2Token
-                Resource: '*'
+                Resource:
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:token-vault/*'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:workload-identity-directory/*'
               - Sid: IdentityTokenVault
                 # The Identity token vault keeps provider client secrets in
                 # Secrets Manager under this reserved prefix; the data-plane
@@ -432,6 +502,16 @@ Resources:
 
   DocCoordinatorRole:
     Type: AWS::IAM::Role
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_111
+            comment: >-
+              Remaining Resource:'*' statements are limited to actions that do
+              not support resource-level permissions (aws-marketplace
+              Subscribe/ViewSubscriptions, ecr:GetAuthorizationToken, X-Ray
+              writes, cloudwatch:PutMetricData). All scopable actions are
+              scoped to account/region ARNs.
     Properties:
       RoleName: !Sub '${ResourcePrefix}-doc-coordinator-role'
       AssumeRolePolicyDocument:
@@ -453,24 +533,35 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
-                Resource: '*'
+                Resource:
+                  # Foundation models in every region: the cross-region
+                  # inference profile routes to models outside this region.
+                  - 'arn:aws:bedrock:*::foundation-model/*'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*'
               - Sid: BedrockMarketplaceSubscribe
                 # Anthropic models on Bedrock are served via AWS Marketplace;
                 # first invocation in a fresh account must auto-subscribe, which
                 # needs these actions. Without them the first InvokeModel 500s.
+                # aws-marketplace actions do not support resource-level
+                # permissions, so '*' is required here.
                 Effect: Allow
                 Action:
                   - aws-marketplace:Subscribe
                   - aws-marketplace:ViewSubscriptions
                 Resource: '*'
+              - Sid: EcrAuth
+                # ecr:GetAuthorizationToken does not support resource-level
+                # permissions, so '*' is required here.
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
               - Sid: EcrPull
                 Effect: Allow
                 Action:
-                  - ecr:GetAuthorizationToken
                   - ecr:BatchGetImage
                   - ecr:GetDownloadUrlForLayer
-                Resource: '*'
-              - Sid: Telemetry
+                Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/*'
+              - Sid: TelemetryLogs
                 Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -478,6 +569,14 @@ Resources:
                   - logs:PutLogEvents
                   - logs:DescribeLogGroups
                   - logs:DescribeLogStreams
+                Resource:
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:log-stream:*'
+              - Sid: TelemetryTraces
+                # X-Ray write/sampling actions and cloudwatch:PutMetricData do
+                # not support resource-level permissions, so '*' is required.
+                Effect: Allow
+                Action:
                   - xray:PutTraceSegments
                   - xray:PutTelemetryRecords
                   - xray:GetSamplingRules
@@ -490,7 +589,8 @@ Resources:
                   - bedrock-agentcore:GetWorkloadAccessToken
                   - bedrock-agentcore:GetWorkloadAccessTokenForJWT
                   - bedrock-agentcore:GetWorkloadAccessTokenForUserId
-                Resource: '*'
+                Resource:
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:workload-identity-directory/*'
         - PolicyName: doc-coordinator-boundaries
           PolicyDocument:
             Version: '2012-10-17'
@@ -515,11 +615,26 @@ Resources:
                   - bedrock-agentcore:ConnectBrowserAutomationStream
                   - bedrock-agentcore:ConnectBrowserLiveViewStream
                   - bedrock-agentcore:GetBrowser
-                Resource: '*'
+                Resource:
+                  # The AWS-managed built-in browser lives under the 'aws'
+                  # account namespace; sessions are created in this account.
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:aws:browser/*'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:browser/*'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:browser-custom/*'
               # NOTE: no Experian access, no Memory, no OAuth providers.
 
   CreditAnalystRole:
     Type: AWS::IAM::Role
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_111
+            comment: >-
+              Remaining Resource:'*' statements are limited to actions that do
+              not support resource-level permissions (aws-marketplace
+              Subscribe/ViewSubscriptions, ecr:GetAuthorizationToken, X-Ray
+              writes, cloudwatch:PutMetricData). All scopable actions are
+              scoped to account/region ARNs.
     Properties:
       RoleName: !Sub '${ResourcePrefix}-credit-analyst-role'
       AssumeRolePolicyDocument:
@@ -541,24 +656,35 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
-                Resource: '*'
+                Resource:
+                  # Foundation models in every region: the cross-region
+                  # inference profile routes to models outside this region.
+                  - 'arn:aws:bedrock:*::foundation-model/*'
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*'
               - Sid: BedrockMarketplaceSubscribe
                 # Anthropic models on Bedrock are served via AWS Marketplace;
                 # first invocation in a fresh account must auto-subscribe, which
                 # needs these actions. Without them the first InvokeModel 500s.
+                # aws-marketplace actions do not support resource-level
+                # permissions, so '*' is required here.
                 Effect: Allow
                 Action:
                   - aws-marketplace:Subscribe
                   - aws-marketplace:ViewSubscriptions
                 Resource: '*'
+              - Sid: EcrAuth
+                # ecr:GetAuthorizationToken does not support resource-level
+                # permissions, so '*' is required here.
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
               - Sid: EcrPull
                 Effect: Allow
                 Action:
-                  - ecr:GetAuthorizationToken
                   - ecr:BatchGetImage
                   - ecr:GetDownloadUrlForLayer
-                Resource: '*'
-              - Sid: Telemetry
+                Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/*'
+              - Sid: TelemetryLogs
                 Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -566,6 +692,14 @@ Resources:
                   - logs:PutLogEvents
                   - logs:DescribeLogGroups
                   - logs:DescribeLogStreams
+                Resource:
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:log-stream:*'
+              - Sid: TelemetryTraces
+                # X-Ray write/sampling actions and cloudwatch:PutMetricData do
+                # not support resource-level permissions, so '*' is required.
+                Effect: Allow
+                Action:
                   - xray:PutTraceSegments
                   - xray:PutTelemetryRecords
                   - xray:GetSamplingRules
@@ -578,7 +712,8 @@ Resources:
                   - bedrock-agentcore:GetWorkloadAccessToken
                   - bedrock-agentcore:GetWorkloadAccessTokenForJWT
                   - bedrock-agentcore:GetWorkloadAccessTokenForUserId
-                Resource: '*'
+                Resource:
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:workload-identity-directory/*'
         - PolicyName: credit-analyst-boundaries
           PolicyDocument:
             Version: '2012-10-17'
@@ -598,12 +733,19 @@ Resources:
                   - bedrock-agentcore:GetCodeInterpreterSession
                   - bedrock-agentcore:ListCodeInterpreterSessions
                   - bedrock-agentcore:GetCodeInterpreter
-                Resource: '*'
+                Resource:
+                  # The AWS-managed built-in code interpreter lives under the
+                  # 'aws' account namespace; sessions are created here.
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:aws:code-interpreter/*'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:code-interpreter/*'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:code-interpreter-custom/*'
               - Sid: OutboundOAuthForGateway
                 Effect: Allow
                 Action:
                   - bedrock-agentcore:GetResourceOauth2Token
-                Resource: '*'
+                Resource:
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:token-vault/*'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:workload-identity-directory/*'
               - Sid: IdentityTokenVault
                 Effect: Allow
                 Action: secretsmanager:GetSecretValue
@@ -645,6 +787,8 @@ Outputs:
     Value: !Ref DocsBucket
   UiBucket:
     Value: !Ref UiBucket
+  AccessLogsBucket:
+    Value: !Ref AccessLogsBucket
   UiUrl:
     Value: !Sub 'https://${Distribution.DomainName}/'
   RegistryUrl:

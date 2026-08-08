@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Employer verification via the AgentCore Browser primitive.
 
 A small Strands agent drives a managed, isolated browser session against the

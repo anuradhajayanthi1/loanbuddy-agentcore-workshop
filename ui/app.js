@@ -1,3 +1,5 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: MIT-0
 /* LoanBuddy SPA - deliberately framework-free and build-free.
  *
  * Auth flow (Lab 1's teaching aid): Cognito USER_PASSWORD_AUTH from the

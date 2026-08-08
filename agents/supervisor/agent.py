@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """LoanBuddy supervisor - the loan officer.
 
 The only agent the applicant ever talks to. Owns the conversation, the

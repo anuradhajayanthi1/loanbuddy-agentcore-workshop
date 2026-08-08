@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """The loan officer persona. Read this - it defines what the supervisor TRIES
 to do. The labs give it the ABILITY to do it.
 

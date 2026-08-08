@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # Build the two deployables that ship in workshop-studio/static/:
 #   seeder-lambda.zip   - CFN custom resource (handler + doc generator +
 #                         vendored Pillow for the Lambda's linux/x86_64 py312)

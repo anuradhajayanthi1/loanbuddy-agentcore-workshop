@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Supervisor configuration.
 
 Everything the labs wire up arrives as an environment variable set at deploy

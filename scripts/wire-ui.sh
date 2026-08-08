@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # Point the deployed UI at the supervisor agent runtime (end of Lab 1).
 # Usage: scripts/wire-ui.sh <agent-runtime-arn>
 set -eo pipefail

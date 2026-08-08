@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # LoanBuddy workshop bootstrap: everything that is NOT an AgentCore primitive.
 # Idempotent - safe to re-run.
 set -eo pipefail

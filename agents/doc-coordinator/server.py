@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Doc Coordinator - an agent deployed as an MCP server on AgentCore Runtime.
 
 From the supervisor's seat, this whole runtime is just two tools in the

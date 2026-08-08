@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 # Publish the workshop to the public GitHub repo (run AFTER Code Defender
 # approval lands). Preserves any existing repo content on a backup branch,
 # then force-pushes the workshop to main.

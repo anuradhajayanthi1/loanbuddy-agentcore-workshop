@@ -14,8 +14,14 @@ awsAccountConfig:
     - workshop_studio
     - customer_provided
   participantRole:
+    # Scoped to the services this workshop actually uses. IAM write access is
+    # restricted to the workshop's role name prefixes (the CFN stack's agent
+    # roles and the roles the agentcore starter toolkit creates for
+    # CodeBuild/Gateway). See static/participant-policy.json.
+    iamPolicies:
+      - static/participant-policy.json
     managedPolicies:
-      - arn:aws:iam::aws:policy/AdministratorAccess
+      - arn:aws:iam::aws:policy/ReadOnlyAccess
   regionConfiguration:
     minAccessibleRegions: 1
     maxAccessibleRegions: 1

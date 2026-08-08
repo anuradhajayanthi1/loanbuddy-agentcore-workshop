@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Per-doc-type specialists: one agent per document type, in-process.
 
 WHY ISN'T THIS FOUR SEPARATELY-DEPLOYED AGENTS?

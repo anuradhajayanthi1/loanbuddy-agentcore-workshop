@@ -1,3 +1,5 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """Heuristic underwriting math - runs in the AgentCore Code Interpreter.
 
 This is the OTHER half of the policy-vs-heuristic split: normalizing messy
