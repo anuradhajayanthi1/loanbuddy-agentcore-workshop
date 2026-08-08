@@ -99,17 +99,6 @@ key are both derived from it. The LLM's cooperation is irrelevant — Alice's
 data isn't *addressable* from his session. **Isolation lives in
 identity-scoped infrastructure, not in the prompt.**
 
-## 6. Three kinds of state, three homes
-
-| State | Lives in | Example |
-|---|---|---|
-| Working context | Runtime session | "the number I just mentioned" |
-| Conversational continuity | AgentCore Memory | "Alice prefers 36 months" |
-| Business ground truth | DynamoDB ledger | "paystub: MISSING" |
-
-Rule of thumb: survives a browser close -> Memory. Survives an audit -> the
-ledger.
-
 **Exit state**: a returning applicant is recognized; cross-user isolation is
 proven. But the agent still can't check documents or credit — it has memory
 and no colleagues. Lab 3 builds the tool plane.

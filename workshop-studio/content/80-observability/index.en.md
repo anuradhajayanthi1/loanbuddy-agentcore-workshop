@@ -19,9 +19,11 @@ Gateway, and (if credit needs refreshing) the Credit Analyst.
 
 ## 2. The span tree IS the architecture diagram
 
-Open CloudWatch -> **GenAI Observability** (or the dashboard URL every
-deploy printed). Find the latest `loanbuddy_supervisor` session and open its
-trace. What you're looking at:
+Open CloudWatch -> **GenAI Observability** -> **Bedrock AgentCore** (or the
+dashboard URL every deploy printed). Find the latest `loanbuddy_supervisor`
+session and open it. That page lists the session's **traces** (one per turn)
+— **click a Trace ID** (pick a high-span row; those are the turns that did
+document/credit work) to open the span tree. What you're looking at:
 
 ```
 supervisor session (alice)

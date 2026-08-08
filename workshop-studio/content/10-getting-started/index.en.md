@@ -17,6 +17,8 @@ navigation bar). CloudShell already has the AWS CLI, git, and Python.
 **In your own account:** use a fresh AWS account you can administer, from
 your laptop terminal (AWS CLI v2 configured) or CloudShell.
 
+::alert[If an AWS CLI command fails with **"Error retrieving credentials from container-role ... 500"**, that's a transient CloudShell credential blip, not a workshop error. Retry once; if it persists, use **Actions -> Restart AWS CloudShell** (or re-open CloudShell from the event dashboard), then `source workshop-env.sh` again.]{header="CloudShell credential 500?"}
+
 ## 2. Bedrock model access (usually automatic)
 
 Bedrock now enables models on first use — there is no manual model-access
@@ -33,9 +35,13 @@ and retry.)
 git clone https://github.com/anuradhajayanthi1/loanbuddy-agentcore-workshop.git loanbuddy-workshop
 cd loanbuddy-workshop
 pip install bedrock-agentcore-starter-toolkit==0.3.10
+export PATH="$HOME/.local/bin:$PATH"   # the 'agentcore' CLI installs here, not on CloudShell's PATH by default
 export AWS_REGION=us-east-1
 ./scripts/bootstrap.sh
 ```
+
+(Bootstrap writes `$HOME/.local/bin` into `workshop-env.sh` too, so once you
+`source` it in Lab terminals `agentcore` is always found.)
 
 Takes about 6 minutes (CloudFront dominates). Bootstrap deploys the base
 CloudFormation stack, seeds the `alice` and `bob` logins, generates
