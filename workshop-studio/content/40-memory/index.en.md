@@ -1,5 +1,5 @@
 ---
-title: "Lab 2: Memory"
+title: "Lab 2: Memory (25 min)"
 weight: 40
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: "Lab 5: Code Interpreter + Browser"
+title: "Lab 5: Code Interpreter + Browser (20 min)"
 weight: 70
 ---
 

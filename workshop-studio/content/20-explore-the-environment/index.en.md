@@ -1,5 +1,5 @@
 ---
-title: "Lab 0: Explore the environment"
+title: "Lab 0: Explore the environment (15 min)"
 weight: 20
 ---
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Generate workshop-env.sh and workshop-card.txt from the CloudFormation
-# stack outputs. Called by bootstrap.sh; ALSO run directly by attendees at
-# AWS-hosted events (where the stack was pre-deployed and seeded for you):
+# stack outputs. Called by bootstrap.sh; also safe to re-run directly any
+# time to regenerate both files from the deployed stack:
 #
 #   ./scripts/make-env.sh
 #   source workshop-env.sh

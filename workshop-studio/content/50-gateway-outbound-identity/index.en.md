@@ -1,5 +1,5 @@
 ---
-title: "Lab 3: Gateway + outbound Identity"
+title: "Lab 3: Gateway + outbound Identity (25 min)"
 weight: 50
 ---
 

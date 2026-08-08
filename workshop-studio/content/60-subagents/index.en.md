@@ -1,5 +1,5 @@
 ---
-title: "Lab 4: Subagents as MCP targets"
+title: "Lab 4: Subagents as MCP targets (30 min)"
 weight: 60
 ---
 

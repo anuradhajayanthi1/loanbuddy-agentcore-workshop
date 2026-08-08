@@ -1,5 +1,5 @@
 ---
-title: "Lab 6: Observability"
+title: "Lab 6: Observability (25 min)"
 weight: 80
 ---
 

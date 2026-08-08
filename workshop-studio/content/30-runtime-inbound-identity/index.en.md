@@ -1,5 +1,5 @@
 ---
-title: "Lab 1: Runtime + inbound Identity"
+title: "Lab 1: Runtime + inbound Identity (25 min)"
 weight: 30
 ---
 
