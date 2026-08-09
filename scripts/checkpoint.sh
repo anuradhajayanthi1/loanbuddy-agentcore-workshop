@@ -44,9 +44,11 @@ memory_id() {
   acc list-memories --query "memories[?starts_with(id, 'loanbuddy_memory')].id | [0]" --output text 2>/dev/null | grep -v None || true
 }
 gateway_url() {
-  acc list-gateways --query "items[?name=='loanbuddy-gateway'].gatewayId | [0]" --output text 2>/dev/null | grep -v None | while read -r gid; do
+  # '|| true': in a fresh account there is no gateway yet - grep exiting 1
+  # must not kill the script under set -eo pipefail.
+  { acc list-gateways --query "items[?name=='loanbuddy-gateway'].gatewayId | [0]" --output text 2>/dev/null | grep -v None | while read -r gid; do
     acc get-gateway --gateway-identifier "$gid" --query gatewayUrl --output text
-  done
+  done; } || true
 }
 
 supervisor_deploy() {  # args: extra -env flags
