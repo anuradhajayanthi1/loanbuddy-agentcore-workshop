@@ -101,6 +101,15 @@ aws s3 cp "${PROFILE_ARG[@]}" --region "$REGION" --quiet \
   "$ROOT/infra/seed/registry-site/index.html" "s3://$UI_BUCKET/registry/index.html"
 
 # ---------------------------------------------------------------------------
+say "Routing X-Ray traces to CloudWatch Logs (required by AgentCore observability)"
+# Fresh accounts default to the classic X-Ray destination; AgentCore's GenAI
+# Observability (Lab 6) needs traces in CloudWatch Logs. Idempotent.
+aws xray update-trace-segment-destination "${PROFILE_ARG[@]}" --region "$REGION" \
+  --destination CloudWatchLogs >/dev/null 2>&1 \
+  && echo "  trace destination: CloudWatchLogs" \
+  || echo "  could not set trace destination (check xray permissions) - Lab 6 spans may not appear"
+
+# ---------------------------------------------------------------------------
 say "Warming up Bedrock model access (first Claude invoke in a fresh account"
 say "triggers an async AWS Marketplace subscription that takes ~2 minutes)"
 # Fire-and-forget: the first invoke initiates the subscription even if it
