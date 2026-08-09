@@ -55,6 +55,7 @@
         "logs:*",
         "cloudwatch:*",
         "xray:*",
+        "application-signals:StartDiscovery",
         "bedrock:*",
         "bedrock-agentcore:*",
         "cloudshell:*"
