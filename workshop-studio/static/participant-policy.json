@@ -56,6 +56,7 @@
         "cloudwatch:*",
         "xray:*",
         "application-signals:StartDiscovery",
+        "cloudtrail:CreateServiceLinkedChannel",
         "bedrock:*",
         "bedrock-agentcore:*",
         "cloudshell:*"
