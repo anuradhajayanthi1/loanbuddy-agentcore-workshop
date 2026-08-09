@@ -25,5 +25,10 @@ aws s3 cp "${PROFILE_ARG[@]}" --region "$REGION" --quiet "s3://$UI_BUCKET/config
 sed -i.bak "s|agentArnEncoded: \"[^\"]*\"|agentArnEncoded: \"$ENCODED\"|" /tmp/lb-config.js
 aws s3 cp "${PROFILE_ARG[@]}" --region "$REGION" --quiet /tmp/lb-config.js "s3://$UI_BUCKET/config.js"
 
+# Bust the CloudFront cache so re-wiring takes effect without a stale
+# config.js lingering at the edge (matters on any re-run after Lab 1).
+aws cloudfront create-invalidation "${PROFILE_ARG[@]}" \
+  --distribution-id "$(out DistributionId)" --paths "/config.js" >/dev/null 2>&1 || true
+
 echo "UI wired to $ARN"
-echo "Open: $(out UiUrl)"
+echo "Open: $(out UiUrl)  (hard-refresh or new tab if it was already open)"

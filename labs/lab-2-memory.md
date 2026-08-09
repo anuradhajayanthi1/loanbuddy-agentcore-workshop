@@ -66,8 +66,8 @@ cd ../..
    long-term extraction is asynchronous. Watch it happen:
 
 ```bash
-ALICE=$(aws dynamodb scan --table-name "$TABLE" \
-  --query 'Items[0].applicant_id.S' --output text)
+ALICE=$(aws cognito-idp admin-get-user --user-pool-id "$USER_POOL_ID" --username alice \
+  --query "UserAttributes[?Name=='sub'].Value" --output text)
 agentcore memory show records -m "$MEMORY_ID" \
   --namespace "/applicants/$ALICE/facts" -r "$AWS_REGION"
 ```

@@ -100,6 +100,17 @@ aws s3 cp "${PROFILE_ARG[@]}" --region "$REGION" --quiet "$ROOT/ui/styles.css" "
 aws s3 cp "${PROFILE_ARG[@]}" --region "$REGION" --quiet \
   "$ROOT/infra/seed/registry-site/index.html" "s3://$UI_BUCKET/registry/index.html"
 
+# Publishing config.js above resets the UI's agent wiring. If a supervisor
+# runtime already exists (i.e. this is a re-run after Lab 1), re-wire it so
+# a mid-workshop re-bootstrap never sends the UI back to "brain missing".
+EXISTING_SUPERVISOR=$(aws bedrock-agentcore-control list-agent-runtimes "${PROFILE_ARG[@]}" --region "$REGION" \
+  --query "agentRuntimes[?starts_with(agentRuntimeName,'loanbuddy_supervisor')].agentRuntimeArn | [0]" \
+  --output text 2>/dev/null | grep -v None || true)
+if [[ -n "$EXISTING_SUPERVISOR" ]]; then
+  say "Re-wiring UI to existing supervisor runtime"
+  "$ROOT/scripts/wire-ui.sh" "$EXISTING_SUPERVISOR"
+fi
+
 # ---------------------------------------------------------------------------
 say "Routing X-Ray traces to CloudWatch Logs (required by AgentCore observability)"
 # Fresh accounts default to the classic X-Ray destination; AgentCore's GenAI

@@ -37,13 +37,16 @@ starts — expected, not a bug.
 ### 2a. Confirm the prerequisite — all docs ACCEPTED
 
 ```bash
-ALICE=$(aws dynamodb scan --table-name "$TABLE" --query 'Items[0].applicant_id.S' --output text)
+ALICE=$(aws cognito-idp admin-get-user --user-pool-id "$USER_POOL_ID" --username alice \
+  --query "UserAttributes[?Name=='sub'].Value" --output text)
 aws dynamodb get-item --table-name "$TABLE" --key "{\"applicant_id\":{\"S\":\"$ALICE\"}}" \
   --query 'Item.documents.M.{id:government_id.M.status.S,paystub:paystub.M.status.S,statement:bank_statement.M.status.S}'
 ```
 
 All three must read **`ACCEPTED`**. If `paystub`/`statement` show `MISSING`,
-finish them (2b). If all ACCEPTED, jump to 2c.
+finish them (2b). If **all three** show `MISSING` (including
+`government_id`), the Lab 4 upload step was skipped — use 2b for all three
+documents (`government_id` uses `alice-id.png`). If all ACCEPTED, jump to 2c.
 
 ### 2b. Complete any missing documents
 
