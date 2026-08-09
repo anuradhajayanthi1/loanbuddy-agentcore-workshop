@@ -69,12 +69,14 @@ cd ../..
    long-term extraction is asynchronous. Watch it happen:
 
 ```bash
+ALICE=$(aws dynamodb scan --table-name "$TABLE" \
+  --query 'Items[0].applicant_id.S' --output text)
 agentcore memory show records -m "$MEMORY_ID" \
-  --namespace "/applicants/<alice-sub>/facts" -r "$AWS_REGION"
+  --namespace "/applicants/$ALICE/facts" -r "$AWS_REGION"
 ```
 
-(Find alice's sub with `aws dynamodb scan --table-name "$TABLE" --query
-'Items[].applicant_id.S'` — it's the identity-propagation pattern again.)
+(Alice's applicant id IS her Cognito `sub`, read straight off the ledger —
+the identity-propagation pattern again.)
 
 Raw conversation turns became structured facts, extracted by the strategy —
 no agent code involved.
