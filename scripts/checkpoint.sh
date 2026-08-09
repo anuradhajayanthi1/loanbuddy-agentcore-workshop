@@ -128,7 +128,7 @@ PYEOF
       --gateway-arn "$GW_ARN" --gateway-url "$GATEWAY_URL" --role-arn "$GW_ROLE" \
       --name experian-mock --target-type openApiSchema \
       --target-payload "{\"inlinePayload\": $SPEC_JSON}" \
-      --credentials '{"api_key":"workshop-experian-key-2026","credential_location":"HEADER","credential_parameter_name":"x-api-key"}' >/dev/null
+      --credentials "{\"api_key\":\"$(out ExperianApiKey)\",\"credential_location\":\"HEADER\",\"credential_parameter_name\":\"x-api-key\"}" >/dev/null
   fi
 fi
 

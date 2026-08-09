@@ -23,7 +23,7 @@ curl -s -X POST "$EXPERIAN_URL" -H 'Content-Type: application/json' \
 
 # with the key -> Alice's credit report
 curl -s -X POST "$EXPERIAN_URL" -H 'Content-Type: application/json' \
-  -H 'x-api-key: workshop-experian-key-2026' \
+  -H "x-api-key: $EXPERIAN_API_KEY" \
   -d '{"full_name":"Alice Anderson"}'
 ```
 
@@ -71,7 +71,7 @@ agentcore gateway create-mcp-gateway-target --region "$AWS_REGION" \
   --gateway-arn "$GW_ARN" --gateway-url "$GATEWAY_URL" --role-arn "$GW_ROLE" \
   --name experian-mock --target-type openApiSchema \
   --target-payload "{\"inlinePayload\": $SPEC_JSON}" \
-  --credentials '{"api_key":"workshop-experian-key-2026","credential_location":"HEADER","credential_parameter_name":"x-api-key"}'
+  --credentials "{\"api_key\":\"$EXPERIAN_API_KEY\",\"credential_location\":\"HEADER\",\"credential_parameter_name\":\"x-api-key\"}"
 ```
 
 That `--credentials` flag stores the bureau API key **on the Gateway

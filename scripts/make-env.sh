@@ -32,6 +32,7 @@ DOCS_BUCKET=$(out DocsBucket)
 UI_URL=$(out UiUrl)
 REGISTRY_URL=$(out RegistryUrl)
 EXPERIAN_URL=$(out ExperianApiUrl)
+EXPERIAN_API_KEY=$(out ExperianApiKey)
 ALICE_PASSWORD=$(out AlicePassword)
 BOB_PASSWORD=$(out BobPassword)
 
@@ -58,6 +59,7 @@ export DOCS_BUCKET="$DOCS_BUCKET"
 export UI_URL="$UI_URL"
 export REGISTRY_URL="$REGISTRY_URL"
 export EXPERIAN_URL="$EXPERIAN_URL"
+export EXPERIAN_API_KEY="$EXPERIAN_API_KEY"
 export SUPERVISOR_ROLE="$(out SupervisorRoleArn)"
 export DOC_COORDINATOR_ROLE="$(out DocCoordinatorRoleArn)"
 export CREDIT_ANALYST_ROLE="$(out CreditAnalystRoleArn)"
@@ -92,7 +94,7 @@ cat > "$CARD" <<EOF
  Docs bucket         $DOCS_BUCKET
  Sample docs         s3://$DOCS_BUCKET/sample-docs/
  Experian mock API   $EXPERIAN_URL
- Experian API key    workshop-experian-key-2026
+ Experian API key    $EXPERIAN_API_KEY
 
  Execution roles
    supervisor        $(out SupervisorRoleArn)

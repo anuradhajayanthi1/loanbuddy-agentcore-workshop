@@ -2,32 +2,73 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "WorkshopServices",
+      "Sid": "WorkshopNamedResources",
       "Effect": "Allow",
       "Action": [
-        "cloudformation:*",
         "s3:*",
         "dynamodb:*",
-        "cognito-idp:*",
-        "cloudfront:*",
         "lambda:*",
-        "apigateway:*",
         "ecr:*",
-        "codebuild:*",
-        "logs:*",
-        "cloudwatch:*",
-        "xray:*",
-        "bedrock:*",
-        "bedrock-agentcore:*",
-        "secretsmanager:*",
-        "cloudshell:*",
+        "codebuild:*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::loanbuddy-*",
+        "arn:aws:s3:::loanbuddy-*/*",
+        "arn:aws:s3:::bedrock-agentcore-*",
+        "arn:aws:s3:::bedrock-agentcore-*/*",
+        "arn:aws:dynamodb:*:*:table/loanbuddy-*",
+        "arn:aws:lambda:*:*:function:loanbuddy-*",
+        "arn:aws:ecr:*:*:repository/bedrock-agentcore-*",
+        "arn:aws:codebuild:*:*:project/bedrock-agentcore-*",
+        "arn:aws:codebuild:*:*:build/bedrock-agentcore-*"
+      ]
+    },
+    {
+      "Sid": "WorkshopStack",
+      "Effect": "Allow",
+      "Action": "cloudformation:*",
+      "Resource": "arn:aws:cloudformation:*:*:stack/loanbuddy-workshop*/*"
+    },
+    {
+      "Sid": "AccountLevelActionsNoResourceSupport",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:ValidateTemplate",
+        "cloudformation:GetTemplateSummary",
+        "cloudformation:ListStacks",
+        "ecr:GetAuthorizationToken",
+        "s3:ListAllMyBuckets",
+        "codebuild:ListBuilds",
+        "codebuild:BatchGetBuilds",
         "sts:GetCallerIdentity",
         "sts:DecodeAuthorizationMessage"
       ],
       "Resource": "*"
     },
     {
-      "Sid": "BedrockMarketplaceModelSubscription",
+      "Sid": "ServicesWithUnpredictableResourceIds",
+      "Effect": "Allow",
+      "Action": [
+        "cognito-idp:*",
+        "cloudfront:*",
+        "apigateway:*",
+        "logs:*",
+        "cloudwatch:*",
+        "xray:*",
+        "bedrock:*",
+        "bedrock-agentcore:*",
+        "cloudshell:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IdentityTokenVaultSecretsOnly",
+      "Effect": "Allow",
+      "Action": "secretsmanager:*",
+      "Resource": "arn:aws:secretsmanager:*:*:secret:bedrock-agentcore-identity!*"
+    },
+    {
+      "Sid": "MarketplaceActionsHaveNoResourceLevelSupport",
       "Effect": "Allow",
       "Action": [
         "aws-marketplace:Subscribe",
@@ -46,7 +87,7 @@
       "Resource": "*"
     },
     {
-      "Sid": "IamWorkshopRolesOnly",
+      "Sid": "IamWorkshopRolePrefixesOnly",
       "Effect": "Allow",
       "Action": [
         "iam:CreateRole",
@@ -69,7 +110,7 @@
       ]
     },
     {
-      "Sid": "ServiceLinkedRoles",
+      "Sid": "ServiceLinkedRolesForWorkshopServices",
       "Effect": "Allow",
       "Action": "iam:CreateServiceLinkedRole",
       "Resource": "*"

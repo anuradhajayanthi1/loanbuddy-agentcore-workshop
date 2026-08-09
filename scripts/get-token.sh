@@ -11,15 +11,21 @@ REGION="${AWS_REGION:-us-east-1}"
 PROFILE_ARG=()
 [[ -n "${AWS_PROFILE:-}" ]] && PROFILE_ARG=(--profile "$AWS_PROFILE")
 
+out() {
+  aws cloudformation describe-stacks "${PROFILE_ARG[@]}" --region "$REGION" \
+    --stack-name "$STACK" \
+    --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text
+}
+
+# Passwords are generated per-deployment by bootstrap and read from the
+# stack outputs - nothing hardcoded in the repo.
 case "$USER" in
-  alice) PASS="LoanBuddy-alice-2026!" ;;
-  bob)   PASS="LoanBuddy-bob-2026!" ;;
+  alice) PASS=$(out AlicePassword) ;;
+  bob)   PASS=$(out BobPassword) ;;
   *) echo "unknown workshop user: $USER" >&2; exit 1 ;;
 esac
 
-CLIENT_ID=$(aws cloudformation describe-stacks "${PROFILE_ARG[@]}" --region "$REGION" \
-  --stack-name "$STACK" \
-  --query "Stacks[0].Outputs[?OutputKey=='SpaClientId'].OutputValue" --output text)
+CLIENT_ID=$(out SpaClientId)
 
 aws cognito-idp initiate-auth "${PROFILE_ARG[@]}" --region "$REGION" \
   --auth-flow USER_PASSWORD_AUTH \

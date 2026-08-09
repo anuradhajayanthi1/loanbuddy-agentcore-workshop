@@ -12,10 +12,27 @@ PROFILE_ARG=()
 [[ -n "${AWS_PROFILE:-}" ]] && PROFILE_ARG=(--profile "$AWS_PROFILE")
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ALICE_PASSWORD="LoanBuddy-alice-2026!"
-BOB_PASSWORD="LoanBuddy-bob-2026!"
 
 say() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
+
+# ---------------------------------------------------------------------------
+# Workshop credentials: generated randomly per deployment (nothing hardcoded
+# in the repo). On re-run, reuse the stack's existing values so a mid-workshop
+# re-bootstrap never rotates logins or the mock API key.
+existing() {
+  aws cloudformation describe-stacks "${PROFILE_ARG[@]}" --region "$REGION" \
+    --stack-name "$STACK" \
+    --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text 2>/dev/null || true
+}
+rand_password() {  # satisfies the pool policy: upper, lower, digit, symbol
+  echo "Lb!$(openssl rand -hex 5)9A"
+}
+ALICE_PASSWORD="$(existing AlicePassword)"
+BOB_PASSWORD="$(existing BobPassword)"
+EXPERIAN_API_KEY="$(existing ExperianApiKey)"
+[[ -z "$ALICE_PASSWORD" || "$ALICE_PASSWORD" == "None" ]] && ALICE_PASSWORD="$(rand_password)"
+[[ -z "$BOB_PASSWORD" || "$BOB_PASSWORD" == "None" ]] && BOB_PASSWORD="$(rand_password)"
+[[ -z "$EXPERIAN_API_KEY" || "$EXPERIAN_API_KEY" == "None" ]] && EXPERIAN_API_KEY="wk-$(openssl rand -hex 12)"
 
 # ---------------------------------------------------------------------------
 say "Deploying CloudFormation stack: $STACK ($REGION)"
@@ -23,6 +40,8 @@ aws cloudformation deploy "${PROFILE_ARG[@]}" --region "$REGION" \
   --stack-name "$STACK" \
   --template-file "$ROOT/infra/template.yaml" \
   --parameter-overrides "ResourcePrefix=$PREFIX" \
+    "AlicePassword=$ALICE_PASSWORD" "BobPassword=$BOB_PASSWORD" \
+    "ExperianApiKey=$EXPERIAN_API_KEY" \
   --capabilities CAPABILITY_NAMED_IAM \
   --no-fail-on-empty-changeset
 
