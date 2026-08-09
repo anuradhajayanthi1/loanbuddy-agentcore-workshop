@@ -36,22 +36,24 @@ by step 2 it will live somewhere no agent can leak it from.
 
 ```bash
 agentcore gateway create-mcp-gateway --region "$AWS_REGION" \
-  --name loanbuddy-gateway \
+  --name loanbuddy-gateway --role-arn "$GATEWAY_ROLE" \
   --authorizer-config "{\"customJWTAuthorizer\":{\"discoveryUrl\":\"$DISCOVERY_URL\",\"allowedClients\":[\"$M2M_CLIENT_ID\"]}}"
 
 export GW_ID=$(aws bedrock-agentcore-control list-gateways \
   --query "items[?name=='loanbuddy-gateway'].gatewayId | [0]" --output text)
-export GATEWAY_URL=$(aws bedrock-agentcore-control get-gateway \
-  --gateway-identifier "$GW_ID" --query gatewayUrl --output text)
-export GW_ARN=$(aws bedrock-agentcore-control get-gateway \
-  --gateway-identifier "$GW_ID" --query gatewayArn --output text)
-export GW_ROLE=$(aws bedrock-agentcore-control get-gateway \
-  --gateway-identifier "$GW_ID" --query roleArn --output text)
+export GW_ARN="arn:aws:bedrock-agentcore:$AWS_REGION:$(aws sts get-caller-identity --query Account --output text):gateway/$GW_ID"
+export GATEWAY_URL="https://$GW_ID.gateway.bedrock-agentcore.$AWS_REGION.amazonaws.com/mcp"
+export GW_ROLE="$GATEWAY_ROLE"
 ```
 
-Note the authorizer: the Gateway has its own front door. Human logins (SPA
-client) don't get in — only machine tokens from the M2M client. Different
-principal, different door.
+Two details worth noticing:
+
+- `--role-arn` hands the Gateway the execution role bootstrap already
+  created (`loanbuddy-gateway-role`) — the identity the Gateway itself
+  assumes when it reaches out to targets.
+- The authorizer: the Gateway has its own front door. Human logins (SPA
+  client) don't get in — only machine tokens from the M2M client. Different
+  principal, different door.
 
 ## 2. Register the Experian mock as an OpenAPI target
 

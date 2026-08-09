@@ -505,6 +505,42 @@ Resources:
                 Action: secretsmanager:GetSecretValue
                 Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
 
+  GatewayRole:
+    # Execution role the AgentCore Gateway assumes to reach its targets:
+    # invoking the subagent runtimes (MCP targets) and resolving credentials
+    # stored on targets. Pre-created here (with the workshop's name prefix)
+    # because hosted-event participants cannot create the starter toolkit's
+    # default role name; labs pass it via --role-arn.
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ResourcePrefix}-gateway-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: bedrock-agentcore.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: gateway-execution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AgentCoreResources
+                Effect: Allow
+                Action: bedrock-agentcore:*
+                Resource: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:*'
+              - Sid: IdentityTokenVault
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
+              - Sid: InvokeWorkshopLambdas
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ResourcePrefix}-*'
+
   DocCoordinatorRole:
     Type: AWS::IAM::Role
     Metadata:
@@ -807,6 +843,8 @@ Outputs:
     Description: Workshop mock key (not a real secret)
   SupervisorRoleArn:
     Value: !GetAtt SupervisorRole.Arn
+  GatewayRoleArn:
+    Value: !GetAtt GatewayRole.Arn
   DocCoordinatorRoleArn:
     Value: !GetAtt DocCoordinatorRole.Arn
   CreditAnalystRoleArn:

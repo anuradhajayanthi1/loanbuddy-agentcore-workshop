@@ -44,10 +44,11 @@ memory_id() {
   acc list-memories --query "memories[?starts_with(id, 'loanbuddy_memory')].id | [0]" --output text 2>/dev/null | grep -v None || true
 }
 gateway_url() {
-  # '|| true': in a fresh account there is no gateway yet - grep exiting 1
-  # must not kill the script under set -eo pipefail.
+  # Derived from the gateway id (vended-account participants may not have
+  # bedrock-agentcore:GetGateway). '|| true': in a fresh account there is no
+  # gateway yet - grep exiting 1 must not kill the script under pipefail.
   { acc list-gateways --query "items[?name=='loanbuddy-gateway'].gatewayId | [0]" --output text 2>/dev/null | grep -v None | while read -r gid; do
-    acc get-gateway --gateway-identifier "$gid" --query gatewayUrl --output text
+    echo "https://$gid.gateway.bedrock-agentcore.$REGION.amazonaws.com/mcp"
   done; } || true
 }
 
@@ -95,6 +96,7 @@ if (( LAB >= 3 )); then
   if [[ -z "$GATEWAY_URL" ]]; then
     say "Creating Gateway"
     agentcore gateway create-mcp-gateway --region "$REGION" --name loanbuddy-gateway \
+      --role-arn "$(out GatewayRoleArn)" \
       --authorizer-config "{\"customJWTAuthorizer\":{\"discoveryUrl\":\"$DISCOVERY_URL\",\"allowedClients\":[\"$M2M_CLIENT_ID\"]}}" >/dev/null
     GATEWAY_URL=$(gateway_url)
   fi
@@ -102,7 +104,7 @@ if (( LAB >= 3 )); then
 
   GW_ID=$(acc list-gateways --query "items[?name=='loanbuddy-gateway'].gatewayId | [0]" --output text)
   GW_ARN="arn:aws:bedrock-agentcore:$REGION:$(aws sts get-caller-identity "${PROFILE_ARG[@]}" --query Account --output text):gateway/$GW_ID"
-  GW_ROLE=$(acc get-gateway --gateway-identifier "$GW_ID" --query roleArn --output text)
+  GW_ROLE=$(out GatewayRoleArn)
 
   if ! acc list-oauth2-credential-providers --query "credentialProviders[?name=='loanbuddy-gateway-access']" --output text | grep -q loanbuddy; then
     say "Creating outbound OAuth credential provider"

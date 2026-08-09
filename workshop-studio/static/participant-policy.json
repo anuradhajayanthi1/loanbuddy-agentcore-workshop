@@ -107,7 +107,8 @@
         "arn:aws:iam::*:role/loanbuddy-*",
         "arn:aws:iam::*:role/*BedrockAgentCore*",
         "arn:aws:iam::*:role/*bedrock-agentcore*",
-        "arn:aws:iam::*:role/agentcore-*"
+        "arn:aws:iam::*:role/agentcore-*",
+        "arn:aws:iam::*:role/AgentCore*"
       ]
     },
     {

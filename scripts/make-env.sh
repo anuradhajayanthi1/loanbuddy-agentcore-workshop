@@ -61,6 +61,7 @@ export REGISTRY_URL="$REGISTRY_URL"
 export EXPERIAN_URL="$EXPERIAN_URL"
 export EXPERIAN_API_KEY="$EXPERIAN_API_KEY"
 export SUPERVISOR_ROLE="$(out SupervisorRoleArn)"
+export GATEWAY_ROLE="$(out GatewayRoleArn)"
 export DOC_COORDINATOR_ROLE="$(out DocCoordinatorRoleArn)"
 export CREDIT_ANALYST_ROLE="$(out CreditAnalystRoleArn)"
 # helper used by the lab guides to read any stack output by name
