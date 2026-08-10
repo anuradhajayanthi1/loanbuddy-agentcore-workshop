@@ -96,12 +96,18 @@ and `alice-statement-90d.png`. Two ways to hand a document to the agent:
 
 - **UI (the product path)**: tell the agent you want to upload — it replies
   with an upload link and the chat shows an upload button. Pick the file.
-- **CLI (the deterministic path)**: upload from the terminal and paste the
-  printed message into the chat:
+- **CLI (the deterministic path)**: run this in your **terminal** (not the
+  chat):
 
 ```bash
 "$WORKSHOP_ROOT/scripts/upload-doc.sh" alice government_id "$WORKSHOP_ROOT/infra/seed/sample-docs/alice-id.png"
 ```
+
+  The script uploads the file and prints a message between dashed lines,
+  like: `I've uploaded my government id. Its s3_key is docs/<uuid>/government_id-cli<timestamp>.png. Please analyze it.`
+  **Copy that entire line and paste it into the UI chat as alice** — that
+  message is what makes the agent call `analyze_document`. Uploading alone
+  changes nothing; the analysis request is the step that flips the ledger.
 
 The walk:
 
