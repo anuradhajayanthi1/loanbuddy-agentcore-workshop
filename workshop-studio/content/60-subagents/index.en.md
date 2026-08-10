@@ -109,15 +109,39 @@ and `alice-statement-90d.png`. Two ways to hand a document to the agent:
   message is what makes the agent call `analyze_document`. Uploading alone
   changes nothing; the analysis request is the step that flips the ledger.
 
-The walk:
+The walk (each CLI command prints a chat line — **copy it and paste it into
+the UI chat as alice** after every upload):
 
-1. Give the agent `alice-id.png` as her government ID -> **ACCEPTED**, with
-   extracted fields relayed conversationally.
-2. Now give it `alice-statement-60d.png` as her bank statement -> **needs
-   resubmission**: "covers only ~60 days, we need 90." A specialist read the
-   document, plain-code rules rejected it, and the supervisor explained why.
-3. *"Sorry, here's the right one"* -> `alice-statement-90d.png` -> ACCEPTED.
-4. Watch the supervisor call `check_docs_complete` to drive what it asks for
+1. Give the agent her government ID -> **ACCEPTED**, with extracted fields
+   relayed conversationally.
+
+```bash
+"$WORKSHOP_ROOT/scripts/upload-doc.sh" alice government_id "$WORKSHOP_ROOT/infra/seed/sample-docs/alice-id.png"
+```
+
+2. Now give it the **60-day** bank statement -> **needs resubmission**:
+   "covers only ~60 days, we need 90." A specialist read the document,
+   plain-code rules rejected it, and the supervisor explained why. (This
+   rejection is the point — don't skip it.)
+
+```bash
+"$WORKSHOP_ROOT/scripts/upload-doc.sh" alice bank_statement "$WORKSHOP_ROOT/infra/seed/sample-docs/alice-statement-60d.png"
+```
+
+3. *"Sorry, here's the right one"* -> the 90-day statement -> **ACCEPTED**.
+
+```bash
+"$WORKSHOP_ROOT/scripts/upload-doc.sh" alice bank_statement "$WORKSHOP_ROOT/infra/seed/sample-docs/alice-statement-90d.png"
+```
+
+4. The paystub -> **ACCEPTED** — and this one quietly fires a **Browser**
+   session to verify the employer (Lab 5 puts that on stage).
+
+```bash
+"$WORKSHOP_ROOT/scripts/upload-doc.sh" alice paystub "$WORKSHOP_ROOT/infra/seed/sample-docs/alice-paystub.png"
+```
+
+5. Watch the supervisor call `check_docs_complete` to drive what it asks for
    next — it never guesses document status from conversation.
 
 **How to watch the tool calls.** Open a **second terminal** and tail the
