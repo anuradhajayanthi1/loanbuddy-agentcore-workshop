@@ -89,7 +89,10 @@ ls "$WORKSHOP_ROOT/infra/seed/sample-docs/"
 ```
 
 You'll use `alice-id.png`, `alice-paystub.png`, `alice-statement-60d.png`,
-and `alice-statement-90d.png`. Two ways to hand a document to the agent:
+and `alice-statement-90d.png`. Two ways to hand a document to the agent —
+**workshop (hosted event) users: use the CLI path** (the sample docs live in
+your CloudShell clone; the UI upload button only picks files from your own
+computer):
 
 - **UI (the product path)**: tell the agent you want to upload — it replies
   with an upload link and the chat shows an upload button. Pick the file.

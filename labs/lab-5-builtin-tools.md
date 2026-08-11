@@ -50,7 +50,11 @@ documents (`government_id` uses `alice-id.png`). If all ACCEPTED, jump to 2c.
 
 ### 2b. Complete any missing documents
 
-**Easiest — the UI upload button:** tell the agent "I'd like to upload my
+**Workshop (hosted event) users: use the CLI helper below** — the sample
+docs live in your CloudShell clone, and the UI upload button only picks
+files from your own computer.
+
+**UI upload button (own-account users):** tell the agent "I'd like to upload my
 paystub", click **Upload**, pick the file. The UI captures the real S3 key.
 
 **Or the CLI helper** — run it, then paste the printed line **exactly**

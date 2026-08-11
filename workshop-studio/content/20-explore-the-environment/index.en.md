@@ -16,6 +16,8 @@ in as `alice` (password: same card). Note the amber **account badge** on the
 login page — if you ever have two workshop tabs open, the badge tells you
 whose bank you are talking to.
 
+::alert[You'll sign out and back in several times today, and CloudShell sessions time out — so **save the card on your own machine now**: in CloudShell, use **Actions -> Download file** with path `loanbuddy-workshop/workshop-card.txt` (or copy the `cat` output into a local note). The logins and URLs on it are all you'll need to get back in.]{header="Save your workshop card"}
+
 Send any message. You get:
 
 > *"The LoanBuddy agent isn't deployed yet - that's Lab 1."*
@@ -25,7 +27,11 @@ the gap the next lab closes.
 
 ## 2. The mock company registry
 
-Open `$REGISTRY_URL` and search **Mercy General**. In Lab 5, an agent will
+```bash
+echo $REGISTRY_URL
+```
+
+Open that URL and search **Mercy General**. In Lab 5, an agent will
 drive this exact page with a real browser — remember what the results table
 looks like. (There is also a mock Experian credit API in your stack; you
 will meet it in Lab 3, right before you wrap it as a tool.)
@@ -38,6 +44,16 @@ wears it:
 ```bash
 aws iam get-role-policy --role-name loanbuddy-doc-coordinator-role \
   --policy-name doc-coordinator-boundaries --query 'PolicyDocument.Statement[].Sid'
+```
+
+Expected output:
+
+```json
+[
+    "ReadDocsOnly",
+    "LedgerDocSection",
+    "BrowserTool"
+]
 ```
 
 Three statements: read documents, write document metadata, use Browser. Note

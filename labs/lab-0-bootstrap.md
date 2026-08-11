@@ -47,7 +47,7 @@ echo "$UI_URL"
    sign in as `alice` (password on the card). Send a message. You'll get:
    *"The LoanBuddy agent isn't deployed yet - that's Lab 1."* The product
    shell is live; the brain is missing.
-2. **The mock registry**: open `$REGISTRY_URL`, search "Mercy General".
+2. **The mock registry**: `echo $REGISTRY_URL`, open it, search "Mercy General".
    Lab 5's Browser agent will drive this exact page. (There's also a mock
    credit-bureau API in your stack — you'll meet it in Lab 3, right before
    you wrap it as a tool.)

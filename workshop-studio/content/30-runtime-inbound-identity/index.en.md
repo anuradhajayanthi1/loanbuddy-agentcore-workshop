@@ -47,6 +47,17 @@ agentcore deploy -env TABLE_NAME="$TABLE" -env DOCS_BUCKET="$DOCS_BUCKET"
 agentcore status        # wait for: Ready
 ```
 
+Deploy takes ~3-5 minutes (remote ARM64 container build in CodeBuild). You
+are looking for these lines:
+
+```text
+✅ Agent created/updated: arn:aws:bedrock-agentcore:us-east-1:...:runtime/loanbuddy_supervisor-XXXXXXXXXX
+Waiting for agent endpoint to be ready...
+Agent endpoint is ready!
+```
+
+and from `agentcore status`, `Status: Ready` in the Endpoint section.
+
 ::alert[If you see **"Platform mismatch: current system is linux/amd64 but Bedrock AgentCore requires linux/arm64"**, that is expected in CloudShell — it is informational. The default `agentcore deploy` does a remote ARM64 build in CodeBuild, so the deployment is correct. Just wait for it to finish.]{header="Expected warning"}
 
 ::alert[**First invoke returns HTTP 500 in a brand-new account?** The first Claude invocation triggers an AWS Marketplace subscription that finishes asynchronously (~2 min). Bootstrap warms this up, but if you land inside that window, wait ~2 minutes and re-invoke — no redeploy needed. If a 500 persists past a few minutes, confirm `agentcore status` is **Ready**; if needed, clean-redeploy: `rm -f .bedrock_agentcore.yaml`, then re-run `agentcore configure` and `agentcore deploy`.]{header="Troubleshooting 500s"}
@@ -58,6 +69,12 @@ export AGENT_ARN=$(aws bedrock-agentcore-control list-agent-runtimes \
   --query "agentRuntimes[?starts_with(agentRuntimeName,'loanbuddy_supervisor')].agentRuntimeArn | [0]" \
   --output text)
 echo "$AGENT_ARN"       # must print an ARN - if blank or None, the deploy isn't finished
+```
+
+Expected output:
+
+```text
+arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/loanbuddy_supervisor-XXXXXXXXXX
 ```
 
 ## 3. Prove the boundary
@@ -85,20 +102,67 @@ curl -s -X POST "$URL" -H "Authorization: Bearer $TOKEN" \
   -d '{"prompt":"Hi! I would like to apply for a $15,000 personal loan."}'
 ```
 
+Expected: the first two commands print exactly `401` and `403`; the third
+returns the loan officer's reply (~10-30 s), something like:
+
+```text
+"Hello Alice! I'd be happy to help you apply for a $15,000 personal loan.
+To get started, could you tell me the purpose of the loan and your
+preferred repayment term? ..."
+```
+
 ## 4. Identity propagation — the concept that matters
 
-Decode Alice's token (`echo $TOKEN | cut -d. -f2 | base64 -D` on macOS, `-d`
-on Linux): the `sub` claim is her stable user ID. Now read
-`applicant_from_request()` in `agent.py` — the agent takes the applicant ID
-from the *validated token*, never from conversation. Then check the ledger:
+Decode Alice's token. (JWTs strip base64 padding; the `awk` adds it back —
+the same fix `applicant_from_request()` applies in `agent.py`.)
+
+**Linux / CloudShell:**
 
 ```bash
+# 1) The WHOLE token payload - every claim Cognito issued for alice
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -d; echo
+
+# 2) ONLY the sub claim - alice's stable user id
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -d | grep -o '"sub":"[^"]*"'
+```
+
+**macOS (own-account users) — same commands, `base64 -D`:**
+
+```bash
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -D; echo
+
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -D | grep -o '"sub":"[^"]*"'
+```
+
+The first command prints the full claim set (`iss`, `client_id`, `exp`,
+...); the second isolates the one that matters:
+
+```text
+"sub":"f4e8e498-a0f1-70b4-6375-b30b89189b63"
+```
+
+Now read `applicant_from_request()` in `agent.py` — the agent takes the
+applicant ID from the *validated token*, never from conversation. Then
+check the ledger:
+
+```bash
+# Every applicant_id in the ledger IS a Cognito sub - alice's row must
+# match the sub you just printed
 aws dynamodb scan --table-name "$TABLE" --query 'Items[].applicant_id.S'
 ```
 
-Her application is keyed by that `sub`. **Identity is established once at
-the front door and flows through every downstream boundary. The agent never
-asks who you are.**
+Expected output:
+
+```json
+[
+    "f4e8e498-a0f1-70b4-6375-b30b89189b63"
+]
+```
+
+Compare: the `sub` from the token and the `applicant_id` in the ledger are
+the same value — identity propagation, not coincidence. **Identity is
+established once at the front door and flows through every downstream
+boundary. The agent never asks who you are.**
 
 ## 5. Wire the UI
 

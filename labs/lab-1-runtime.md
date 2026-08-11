@@ -82,18 +82,41 @@ curl -s -X POST "$URL" -H "Authorization: Bearer $TOKEN" \
 
 ## 4. Identity propagation — the concept that matters
 
-Decode Alice's token (`echo $TOKEN | cut -d. -f2 | base64 -D` on macOS, `-d`
-on Linux): the `sub` claim is her stable user ID. Now read
-`applicant_from_request()` in `agent.py` — the agent takes the applicant ID
-from the *validated token*, never from conversation. Then check the ledger:
+Decode Alice's token. (JWTs strip base64 padding; the `awk` adds it back —
+the same fix `applicant_from_request()` applies in `agent.py`.)
+
+Linux / CloudShell:
 
 ```bash
+# 1) The WHOLE token payload - every claim Cognito issued for alice
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -d; echo
+
+# 2) ONLY the sub claim - alice's stable user id
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -d | grep -o '"sub":"[^"]*"'
+```
+
+macOS (own-account users) — same commands, `base64 -D`:
+
+```bash
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -D; echo
+
+echo "$TOKEN" | cut -d. -f2 | awk '{while (length($0)%4) $0=$0"="; print}' | base64 -D | grep -o '"sub":"[^"]*"'
+```
+
+Now read `applicant_from_request()` in `agent.py` — the agent takes the
+applicant ID from the *validated token*, never from conversation. Then check
+the ledger:
+
+```bash
+# Every applicant_id in the ledger IS a Cognito sub - alice's row must
+# match the sub you just printed
 aws dynamodb scan --table-name "$TABLE" --query 'Items[].applicant_id.S'
 ```
 
-Her application is keyed by that `sub`. **Identity is established once at
-the front door and flows through every downstream boundary. The agent never
-asks who you are.**
+Compare: the `sub` from the token and the `applicant_id` in the ledger are
+the same value — identity propagation, not coincidence. **Identity is
+established once at the front door and flows through every downstream
+boundary. The agent never asks who you are.**
 
 ## 5. Wire the UI
 

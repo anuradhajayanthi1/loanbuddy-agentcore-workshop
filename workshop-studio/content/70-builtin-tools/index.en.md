@@ -55,13 +55,12 @@ documents (`government_id` uses `alice-id.png`). If all three are
 
 ### 2b. Complete any missing documents
 
-**Easiest — the UI upload button:** tell the agent "I'd like to upload my
-paystub", click the **Upload** control that appears, pick the file. The UI
-captures the real S3 key for you automatically.
-
-**Or the CLI helper.** Run it, then paste the line it prints **exactly as
-printed** — it contains a real S3 key (a UUID and timestamp). Do **not** type
-a shortened or example path; the agent needs the complete key:
+**Workshop (hosted event) users: use the CLI helper** — the sample docs
+live in your CloudShell clone, and the UI's upload button can only pick
+files from your own computer. Run it, then paste the line it prints
+**exactly as printed** — it contains a real S3 key (a UUID and timestamp).
+Do **not** type a shortened or example path; the agent needs the complete
+key:
 
 ```bash
 ./scripts/upload-doc.sh alice paystub infra/seed/sample-docs/alice-paystub.png
@@ -84,6 +83,10 @@ Browser employer check, see section 3). Repeat for the statement:
 ./scripts/upload-doc.sh alice bank_statement infra/seed/sample-docs/alice-statement-90d.png
 ```
 
+(Own-account users working from a laptop can instead use the **UI upload
+button**: send *"I'd like to upload my paystub"*, click the Upload control,
+pick the file — the UI captures the real S3 key automatically.)
+
 Re-run the 2a check until all three read `ACCEPTED`.
 
 ### 2c. Start the tail, then run the assessment
@@ -98,16 +101,39 @@ RT=$(aws bedrock-agentcore-control list-agent-runtimes \
 aws logs tail "/aws/bedrock-agentcore/runtimes/${RT}-DEFAULT" --follow --format short
 ```
 
-Then, in the UI as **alice**: *"Please run my credit assessment for $15,000
-over 36 months."*
+Then, in the UI as **alice**, send:
+
+```text
+Please run my credit assessment for $15,000 over 36 months.
+```
 
 ~90 seconds later the chat shows a PRIME tier, a rate band, and a **scenario
-table** (payments at 24/36/48 months). In the log terminal you'll see the
-model **write Python and execute it in a sandbox session** — the sandbox has
-**zero AWS credentials** (data in, numbers out). In the AgentCore console
-(Built-in tools -> Code Interpreter), refresh during this window to catch the
-ACTIVE session; the Observability panel there also records "Started sessions"
-after the fact.
+table** (payments at 24/36/48 months). The log is noisy — these are the
+lines to spot:
+
+```text
+[credit-analyst] pulled fresh credit report: score=780
+Initialized CodeInterpreter with session='session-a2f89e2472b6', identifier='aws.codeinterpreter.v1'
+I'll underwrite this personal loan application step-by-step using Python. Let me execute the calculations now.
+Tool #1: code_interpreter
+Starting code interpreter session...
+✅ Session started: 01KZJT6CGS0D36SV2MAX9DQCB8
+Tool #2: code_interpreter
+   ...
+Tool #6: code_interpreter
+## Underwriting Analysis Complete
+- **DTI: 17.11%** (max allowed: 43%) ✓
+### RECOMMENDATION: APPROVE
+Tool #7: UnderwritingResult
+[credit-analyst.underwriting] underwriting: income=7807 dti=0.17 max=36100
+```
+
+That's the model **writing Python and executing it in a sandbox session** —
+the sandbox has **zero AWS credentials** (data in, numbers out). The
+`✅ Session started: 01K...` ID is the session you'll find in the AgentCore
+console (Built-in tools -> Code Interpreter) — refresh during this window to
+catch it ACTIVE; sessions terminate seconds after the run, and a
+**Terminated** entry is your proof it ran, not a failure.
 
 ### 2d. Confirm it ran
 
@@ -119,6 +145,22 @@ aws dynamodb get-item --table-name "$TABLE" --key "{\"applicant_id\":{\"S\":\"$A
   --query 'Item.credit.M.assessment.M.{tier:tier.S,dti:dti.N,scenarios:scenarios.L}'
 ```
 
+Expected output (trimmed):
+
+```json
+{
+    "tier": "PRIME",
+    "dti": "0.1711",
+    "scenarios": [
+        { "M": { "term_months": {"N": "24"}, "monthly_payment": {"N": "693.91"}, ... } },
+        { "M": { "term_months": {"N": "36"}, "monthly_payment": {"N": "485.77"}, ... } },
+        { "M": { "term_months": {"N": "48"}, "monthly_payment": {"N": "382.24"}, ... } }
+    ]
+}
+```
+
+(`null` here means the assessment hasn't run yet — go back to 2c.)
+
 Then the sanity check that motivates the whole primitive: ask any bare LLM to
 compute a 36-month amortized payment at 10.25% in its head, and compare
 against the sandbox's answer. Money math belongs in a calculator.
@@ -126,13 +168,19 @@ against the sandbox's answer. Money math belongs in a calculator.
 ## 3. Watch Browser verify an employer
 
 Bob's paystub names an employer his bank statement abbreviates and the state
-registry has never heard of. As **bob** (sign in as bob), run intake if
-needed (*"$15,000 debt consolidation, 36 months, I make $124,000 at Apex
-Fabrication Co"*), then upload his ID and paystub using the same method as
-section 2b (UI upload button, or `./scripts/upload-doc.sh bob government_id
-infra/seed/sample-docs/bob-id.png` and `... bob paystub
-infra/seed/sample-docs/bob-paystub.png` — pasting each printed line with its
-real key):
+registry has never heard of. Sign in as **bob** and run intake if needed:
+
+```text
+$15,000 debt consolidation, 36 months, I make $124,000 at Apex Fabrication Co
+```
+
+Then upload his ID and paystub the same way as section 2b, pasting each
+printed line with its real key:
+
+```bash
+./scripts/upload-doc.sh bob government_id infra/seed/sample-docs/bob-id.png
+./scripts/upload-doc.sh bob paystub infra/seed/sample-docs/bob-paystub.png
+```
 
 During paystub analysis, the Doc Coordinator starts an AgentCore **Browser**
 session, drives the registry site you saw in Lab 0 — types the employer
@@ -143,8 +191,13 @@ confirm the exact legal business name?"
 
 **Answer the flag in character** — the agent genuinely waits for Bob's
 response before proceeding (flags are conversations, and conversations have
-two sides). Something like: *"That's the only name on my paperwork — please
-go ahead with my assessment."* It records the answer and moves on.
+two sides). Send:
+
+```text
+That's the only name on my paperwork - please go ahead with my assessment.
+```
+
+It records the answer and moves on.
 
 Design notes worth reading in `employer_check.py`:
 - The browser runs in a managed, isolated session — a hostile webpage has no

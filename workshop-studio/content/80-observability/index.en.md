@@ -13,9 +13,14 @@ about reading it.
 
 ## 1. Generate a fresh golden-path trace
 
-In the UI as **alice**, one message: *"Give me a quick status check on my
-documents and my approved options."* This touches Memory, the ledger, the
-Gateway, and (if credit needs refreshing) the Credit Analyst.
+In the UI as **alice**, send one message:
+
+```text
+Give me a quick status check on my documents and my approved options.
+```
+
+This touches Memory, the ledger, the Gateway, and (if credit needs
+refreshing) the Credit Analyst.
 
 ## 2. The span tree IS the architecture diagram
 

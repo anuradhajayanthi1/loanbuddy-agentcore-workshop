@@ -27,6 +27,14 @@ curl -s -X POST "$EXPERIAN_URL" -H 'Content-Type: application/json' \
   -d '{"full_name":"Alice Anderson"}'
 ```
 
+Expected: the first call returns `{"message":"Forbidden"}`; the second
+returns the report:
+
+```json
+{"score": 780, "open_accounts": 4, "delinquencies_24mo": 0, "utilization_pct": 12,
+ "monthly_obligations": 850, "bureau": "Experian (workshop mock)", "subject": "Alice Anderson"}
+```
+
 This is the "before" picture: every consumer of this API needs the URL, the
 key, the JSON shape, and its own error handling — and every one of them is a
 place the key can leak. Keep the key in your head for the next ten minutes;
@@ -45,6 +53,17 @@ export GW_ARN="arn:aws:bedrock-agentcore:$AWS_REGION:$(aws sts get-caller-identi
 export GATEWAY_URL="https://$GW_ID.gateway.bedrock-agentcore.$AWS_REGION.amazonaws.com/mcp"
 export GW_ROLE="$GATEWAY_ROLE"
 ```
+
+From the create command you are looking for:
+
+```text
+✓ Created Gateway: arn:aws:bedrock-agentcore:us-east-1:...:gateway/loanbuddy-gateway-XXXXXXXXXX
+  Gateway URL: https://loanbuddy-gateway-XXXXXXXXXX.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp
+✅ Gateway is ready
+```
+
+(An X-Ray/observability warning after "Gateway is ready" is harmless here —
+tracing setup is covered in Lab 6.)
 
 Two details worth noticing:
 
@@ -107,6 +126,22 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST "$GATEWAY_URL" \
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}'
 ```
 
+Expected output, in order — the tool list (two names at this point):
+
+```text
+"name": "x_amz_bedrock_agentcore_search",
+"name": "experian-mock___get_credit_report",
+```
+
+the tool call (Alice's report, wrapped in MCP JSON-RPC):
+
+```text
+{"jsonrpc":"2.0","id":2,"result":{"isError":false,"content":[{"type":"text",
+ "text":"{\"score\":780,\"open_accounts\":4,...,\"subject\":\"Alice Anderson\"}"}]}}
+```
+
+and finally a bare `401`.
+
 The `experian-mock___` prefix is Gateway routing made visible — you'll read
 it straight out of traces in Lab 6.
 
@@ -142,8 +177,13 @@ agentcore deploy -env TABLE_NAME="$TABLE" -env DOCS_BUCKET="$DOCS_BUCKET" \
 cd ../..
 ```
 
-In the UI, ask alice: *"Can you run a quick credit check for me?"* The
-supervisor discovers `get_credit_report` over MCP, calls it
+In the UI as **alice**, send:
+
+```text
+Can you run a quick credit check for me?
+```
+
+The supervisor discovers `get_credit_report` over MCP, calls it
 mid-conversation, and gives you a preliminary read on your credit (it will
 note the formal assessment comes after documents — that's its lending
 process talking). Contrast with `get_or_create_application` in `tools.py` —

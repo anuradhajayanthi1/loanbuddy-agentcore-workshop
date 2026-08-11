@@ -56,6 +56,10 @@ agentcore deploy -env TABLE_NAME="$TABLE" \
 cd ../..
 ```
 
+Each deploy ends the same way Lab 1's did — you are looking for
+`✅ Agent created/updated: ...` and `Agent endpoint is ready!` (about 3-5
+minutes per agent).
+
 Two things changed versus Lab 1's deploy: `-p MCP` (this runtime speaks MCP,
 not the HTTP contract), and `allowedClients` is the **M2M client** — a
 human's SPA token cannot invoke these runtimes at all. Users talk to the
@@ -75,11 +79,38 @@ subagent runtime's JWT authorizer — which is why the runtime then hands your
 subagent its workload identity for *its own* outbound calls. Auth at every
 hop, no credential in any codebase.
 
-Re-list the catalog (Lab 3's `tools/list` command): five tools now —
-`doc-coordinator___analyze_document`, `doc-coordinator___check_docs_complete`,
-`doc-coordinator___verify_employer`, `credit-analyst___assess_credit`,
-`experian-mock___get_credit_report`. An agent, behind the same interface as
-a Lambda.
+Re-list the catalog (a fresh token — the Lab 3 one has likely expired):
+
+```bash
+SECRET=$(aws cognito-idp describe-user-pool-client --user-pool-id "$USER_POOL_ID" \
+  --client-id "$M2M_CLIENT_ID" --query 'UserPoolClient.ClientSecret' --output text)
+M2M_TOKEN=$(curl -s -X POST "$TOKEN_ENDPOINT" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "$M2M_CLIENT_ID:$SECRET" \
+  -d "grant_type=client_credentials&scope=${GATEWAY_SCOPE/\//%2F}" \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+
+curl -s -X POST "$GATEWAY_URL" -H "Authorization: Bearer $M2M_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+  | python3 -m json.tool | grep '"name"'
+```
+
+(`$GATEWAY_URL` comes from Lab 3 — if this is a new terminal, re-derive it:
+`GW_ID=$(aws bedrock-agentcore-control list-gateways --query "items[?name=='loanbuddy-gateway'].gatewayId | [0]" --output text); export GATEWAY_URL="https://$GW_ID.gateway.bedrock-agentcore.$AWS_REGION.amazonaws.com/mcp"`)
+
+Expected output — five tools now:
+
+```text
+"name": "x_amz_bedrock_agentcore_search",
+"name": "credit-analyst___assess_credit",
+"name": "doc-coordinator___analyze_document",
+"name": "doc-coordinator___check_docs_complete",
+"name": "doc-coordinator___verify_employer",
+"name": "experian-mock___get_credit_report",
+```
+
+An agent, behind the same interface as a Lambda.
 
 ## 4. Run the golden path (the fun part)
 
@@ -92,22 +123,35 @@ ls "$WORKSHOP_ROOT/infra/seed/sample-docs/"
 ```
 
 You'll use `alice-id.png`, `alice-paystub.png`, `alice-statement-60d.png`,
-and `alice-statement-90d.png`. Two ways to hand a document to the agent:
+and `alice-statement-90d.png`. Two ways to hand a document to the agent —
+**workshop (hosted event) users: use the CLI path.** The sample documents
+live in your CloudShell clone, and the UI's upload button can only pick
+files from your own computer.
 
-- **UI (the product path)**: tell the agent you want to upload — it replies
-  with an upload link and the chat shows an upload button. Pick the file.
-- **CLI (the deterministic path)**: run this in your **terminal** (not the
-  chat):
+- **CLI (use this in CloudShell)**: run each upload command in your
+  **terminal** (not the chat). The script uploads the file and prints a
+  message between dashed lines:
 
-```bash
-"$WORKSHOP_ROOT/scripts/upload-doc.sh" alice government_id "$WORKSHOP_ROOT/infra/seed/sample-docs/alice-id.png"
+```text
+Uploaded: s3://loanbuddy-docs-.../docs/<uuid>/government_id-cli<timestamp>.png
+
+Paste this into the chat as alice:
+------------------------------------------------------------
+I've uploaded my government id. Its s3_key is docs/<uuid>/government_id-cli<timestamp>.png. Please analyze it.
+------------------------------------------------------------
 ```
 
-  The script uploads the file and prints a message between dashed lines,
-  like: `I've uploaded my government id. Its s3_key is docs/<uuid>/government_id-cli<timestamp>.png. Please analyze it.`
-  **Copy that entire line and paste it into the UI chat as alice** — that
-  message is what makes the agent call `analyze_document`. Uploading alone
-  changes nothing; the analysis request is the step that flips the ledger.
+  **Copy the line between the dashes and paste it into the UI chat as
+  alice** — that message is what makes the agent call `analyze_document`.
+  Uploading alone changes nothing; the analysis request is the step that
+  flips the ledger.
+
+- **UI (the product path)**: what a real applicant would experience — tell
+  the agent you want to upload and the chat shows an upload button. It picks
+  files from **your computer**, so use it if you're working own-account from
+  your laptop (or first pull a sample doc out of CloudShell via
+  **Actions -> Download file**, path
+  `loanbuddy-workshop/infra/seed/sample-docs/...`).
 
 The walk (each CLI command prints a chat line — **copy it and paste it into
 the UI chat as alice** after every upload):
@@ -157,9 +201,22 @@ aws logs tail "/aws/bedrock-agentcore/runtimes/${RT}-DEFAULT" --follow --format 
   | grep --line-buffered -E "Tool #|gateway tools"
 ```
 
-Send a message in the UI ("what do I still need?") and watch the supervisor
-call `get_or_create_application`, then
-`doc-coordinator___check_docs_complete`, and only then answer — proof it
+Then send this in the UI as **alice**:
+
+```text
+what do I still need?
+```
+
+In the tail you'll see lines like:
+
+```text
+Tool #1: get_or_create_application
+Tool #2: doc_coordinator___check_docs_complete
+gateway tools: ['doc-coordinator___analyze_document', 'doc-coordinator___check_docs_complete', ...]
+```
+
+— the supervisor calls `get_or_create_application`, then
+`doc-coordinator___check_docs_complete`, and only then answers: proof it
 reads status from the ledger, not the conversation. Ctrl+C the tail when done.
 
 Note the latency: `analyze_document` takes ~20 seconds because an entire

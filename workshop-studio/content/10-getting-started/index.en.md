@@ -63,12 +63,17 @@ echo "$UI_URL"
 If the echo prints a CloudFront URL, you are wired up. (Re-run
 `./scripts/make-env.sh` to regenerate these files from the stack any time.)
 
-## 5. Two rules that prevent every common mishap
+## 5. Three rules that prevent every common mishap
 
 1. **Copy code blocks without the fences.** Copy what is between the
    ` ``` ` lines, never the fence lines themselves.
 2. **Variables die with the terminal.** New terminal = `source
    workshop-env.sh` again. Values born during labs (agent ARN, memory ID)
    each come with a one-line command that re-fetches them.
+3. **CloudShell times out when idle** (~20 minutes). Your files survive;
+   your terminal doesn't. After a timeout: `cd ~/loanbuddy-workshop &&
+   source workshop-env.sh` — and if `agentcore` comes up "command not
+   found", re-run `pip install bedrock-agentcore-starter-toolkit==0.3.10`
+   (fast the second time).
 
 Continue to **Lab 0** to inspect what bootstrap built.
