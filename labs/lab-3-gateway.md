@@ -5,8 +5,11 @@ single authenticated tool catalog, plus the outbound half of Identity — the
 token vault that lets an agent hold credentials that appear nowhere in its
 code.
 
-> **Before you start**: in every new terminal, `source workshop-env.sh` from
-> the workshop root (sanity check: `echo $EXPERIAN_URL` prints a URL).
+In every new terminal, run:
+
+```bash
+cd ~/loanbuddy-workshop && source workshop-env.sh
+```
 
 ## 0. Meet the raw API you're about to wrap
 

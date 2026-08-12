@@ -4,8 +4,11 @@ Give the agent continuity across days. The core lesson: **namespace design
 decides what a memory survives** — and business ground truth still belongs
 in a database, not in memory.
 
-> **Before you start**: in every new terminal, `source workshop-env.sh` from
-> the workshop root (sanity check: `echo $TABLE` prints the table name).
+In every new terminal, run:
+
+```bash
+cd ~/loanbuddy-workshop && source workshop-env.sh
+```
 
 ## 1. Namespace design first, console second
 
@@ -59,7 +62,7 @@ cd ../..
 
 ## 4. The two-session test
 
-1. In the UI as alice: *"I want $15,000 for home improvements. I'm Alice
+1. **Sign out, then sign in as alice.** Say: *"I want $15,000 for home improvements. I'm Alice
    Anderson, a nurse at Mercy General Hospital, $85,000 a year. I prefer a
    36 month term, and remember: call me only after 3pm."* 
 2. Sign out (this rotates the runtime session ID). Wait ~2 minutes —

@@ -8,8 +8,11 @@ single authenticated tool catalog, plus the outbound half of Identity — the
 token vault that lets an agent hold credentials that appear nowhere in its
 code.
 
-> **Before you start**: in every new terminal, `source workshop-env.sh` from
-> the workshop root (sanity check: `echo $EXPERIAN_URL` prints a URL).
+In every new terminal, run:
+
+```bash
+cd ~/loanbuddy-workshop && source workshop-env.sh
+```
 
 ## 0. Meet the raw API you're about to wrap
 
@@ -27,8 +30,8 @@ curl -s -X POST "$EXPERIAN_URL" -H 'Content-Type: application/json' \
   -d '{"full_name":"Alice Anderson"}'
 ```
 
-Expected: the first call returns `{"message":"Forbidden"}`; the second
-returns the report:
+Expected: the first call returns `{"error": "invalid or missing API key"}`;
+the second returns the report:
 
 ```json
 {"score": 780, "open_accounts": 4, "delinquencies_24mo": 0, "utilization_pct": 12,

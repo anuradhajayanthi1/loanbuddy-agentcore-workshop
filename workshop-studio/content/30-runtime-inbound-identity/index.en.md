@@ -48,15 +48,21 @@ agentcore status        # wait for: Ready
 ```
 
 Deploy takes ~3-5 minutes (remote ARM64 container build in CodeBuild). You
-are looking for these lines:
+are looking for these lines, ending in a **Deployment Success** panel:
 
 ```text
-✅ Agent created/updated: arn:aws:bedrock-agentcore:us-east-1:...:runtime/loanbuddy_supervisor-XXXXXXXXXX
-Waiting for agent endpoint to be ready...
-Agent endpoint is ready!
+🎉 CodeBuild completed successfully in 0m 26s
+Deployment completed successfully - Agent: arn:aws:bedrock-agentcore:us-east-1:...:runtime/loanbuddy_supervisor-XXXXXXXXXX
 ```
 
-and from `agentcore status`, `Status: Ready` in the Endpoint section.
+and from `agentcore status`:
+
+```text
+Ready - Agent deployed and endpoint available
+Endpoint: DEFAULT (READY)
+```
+
+::alert[Near the end of the deploy you may see **"Failed to enable observability ... X-Ray Delivery Destination ..."**. Harmless: the deploy just configured the account's trace destination, which takes 10-15 minutes to become ACTIVE. Your agent works now; traces catch up well before Lab 6.]{header="X-Ray warning during deploy?"}
 
 ::alert[If you see **"Platform mismatch: current system is linux/amd64 but Bedrock AgentCore requires linux/arm64"**, that is expected in CloudShell — it is informational. The default `agentcore deploy` does a remote ARM64 build in CodeBuild, so the deployment is correct. Just wait for it to finish.]{header="Expected warning"}
 

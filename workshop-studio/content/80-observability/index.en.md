@@ -9,7 +9,11 @@ each `agentcore deploy` wired OTEL telemetry, and the
 auto-instruments the model calls, AWS SDK calls, and HTTP calls. This lab is
 about reading it.
 
-> **Before you start**: `source workshop-env.sh` from the workshop root.
+In every new terminal, run:
+
+```bash
+cd ~/loanbuddy-workshop && source workshop-env.sh
+```
 
 ## 1. Generate a fresh golden-path trace
 

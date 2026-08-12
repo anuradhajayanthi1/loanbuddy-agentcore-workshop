@@ -34,14 +34,15 @@ and retry.)
 ```bash
 git clone https://github.com/anuradhajayanthi1/loanbuddy-agentcore-workshop.git loanbuddy-workshop
 cd loanbuddy-workshop
-pip install bedrock-agentcore-starter-toolkit==0.3.10
-export PATH="$HOME/.local/bin:$PATH"   # the 'agentcore' CLI installs here, not on CloudShell's PATH by default
+python3 -m venv .venv
+.venv/bin/pip install bedrock-agentcore-starter-toolkit==0.3.10
 export AWS_REGION=us-east-1
 ./scripts/bootstrap.sh
 ```
 
-(Bootstrap writes `$HOME/.local/bin` into `workshop-env.sh` too, so once you
-`source` it in Lab terminals `agentcore` is always found.)
+(The `agentcore` CLI lives in that `.venv` inside your home directory, so it
+survives CloudShell restarts; `workshop-env.sh` puts it on PATH whenever you
+`source` it.)
 
 Takes about 6 minutes (CloudFront dominates). Bootstrap deploys the base
 CloudFormation stack, seeds the `alice` and `bob` logins, generates
@@ -71,9 +72,8 @@ If the echo prints a CloudFront URL, you are wired up. (Re-run
    workshop-env.sh` again. Values born during labs (agent ARN, memory ID)
    each come with a one-line command that re-fetches them.
 3. **CloudShell times out when idle** (~20 minutes). Your files survive;
-   your terminal doesn't. After a timeout: `cd ~/loanbuddy-workshop &&
-   source workshop-env.sh` — and if `agentcore` comes up "command not
-   found", re-run `pip install bedrock-agentcore-starter-toolkit==0.3.10`
-   (fast the second time).
+   your terminal doesn't. After a timeout, run
+   `cd ~/loanbuddy-workshop && source workshop-env.sh` and continue where
+   you left off.
 
 Continue to **Lab 0** to inspect what bootstrap built.

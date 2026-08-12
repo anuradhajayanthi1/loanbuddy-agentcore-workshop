@@ -10,13 +10,25 @@ spend ten minutes feeling the starting state.
 
 ## 1. The product shell, with no brain
 
-Open the UI — the URL is on your **workshop card** (`cat workshop-card.txt`
-from the workshop directory, or `echo $UI_URL` in a sourced terminal). Sign
-in as `alice` (password: same card). Note the amber **account badge** on the
-login page — if you ever have two workshop tabs open, the badge tells you
-whose bank you are talking to.
+First, your **workshop card** — every URL, login, and ID for the day:
 
-::alert[You'll sign out and back in several times today, and CloudShell sessions time out — so **save the card on your own machine now**: in CloudShell, use **Actions -> Download file** with path `loanbuddy-workshop/workshop-card.txt` (or copy the `cat` output into a local note). The logins and URLs on it are all you'll need to get back in.]{header="Save your workshop card"}
+```bash
+cat workshop-card.txt
+```
+
+You'll sign out and back in several times today, and CloudShell sessions
+time out — so **save the card on your own machine now**.
+
+Then open the UI:
+
+```bash
+echo $UI_URL
+```
+
+Open that URL (it's also on the card) and sign in as `alice` — password on
+the same card. Note the amber **account badge** on the login page — if you
+ever have two workshop tabs open, the badge tells you whose bank you are
+talking to.
 
 Send any message. You get:
 

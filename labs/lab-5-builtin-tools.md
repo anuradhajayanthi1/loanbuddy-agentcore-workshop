@@ -7,7 +7,11 @@ Doc Coordinator gets Browser, Credit Analyst gets Code Interpreter, the
 supervisor gets neither — built-in tools attach to the domain that needs
 them, not to the orchestrator by default.
 
-> **Before you start**: `source workshop-env.sh` from the workshop root.
+In every new terminal, run:
+
+```bash
+cd ~/loanbuddy-workshop && source workshop-env.sh
+```
 
 ## 1. The policy-vs-heuristic split (read this table twice)
 

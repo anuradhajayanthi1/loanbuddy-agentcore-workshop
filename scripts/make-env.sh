@@ -44,10 +44,10 @@ export WORKSHOP_ROOT="$ROOT"
 export AWS_REGION="$REGION"
 export STACK="$STACK"
 export AGENTCORE_SUPPRESS_RECOMMENDATION=1
-# The agentcore CLI (from bedrock-agentcore-starter-toolkit) installs to
-# ~/.local/bin, which is NOT on CloudShell's PATH by default. Put it on PATH
-# so 'agentcore' is found in every terminal that sources this file.
-export PATH="\$HOME/.local/bin:\$PATH"
+# Put the agentcore CLI on PATH: the workshop installs it into a venv inside
+# the clone (survives CloudShell restarts); ~/.local/bin covers pip --user
+# setups on personal machines.
+export PATH="$ROOT/.venv/bin:\$HOME/.local/bin:\$PATH"
 export USER_POOL_ID="$USER_POOL_ID"
 export SPA_CLIENT_ID="$SPA_CLIENT_ID"
 export M2M_CLIENT_ID="$M2M_CLIENT_ID"

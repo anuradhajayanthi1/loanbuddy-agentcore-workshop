@@ -5,8 +5,13 @@ them behind the same Gateway as the Lambda-backed tool. From the
 supervisor's seat, a specialist agent and a plain function are
 indistinguishable — that's the point.
 
-> **Before you start**: `source workshop-env.sh` from the workshop root, and
-> have `$GATEWAY_URL` exported from Lab 3 (sanity: `echo $GATEWAY_URL`).
+In every new terminal, run:
+
+```bash
+cd ~/loanbuddy-workshop && source workshop-env.sh
+```
+
+(You'll also need `$GATEWAY_URL` from Lab 3 — sanity: `echo $GATEWAY_URL`.)
 
 ## 1. Read before deploying (10 minutes well spent)
 
